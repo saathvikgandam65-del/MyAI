@@ -1,4 +1,3 @@
 flask
-ollama
-ddgs
+huggingface_hub
 gunicorn
