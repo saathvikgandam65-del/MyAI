@@ -1,11 +1,19 @@
 from flask import Flask, render_template, request, jsonify
-import ollama
+from huggingface_hub import InferenceClient
 import ast
 import operator
-import re
 import math
+import re
+import os
 
 app = Flask(__name__)
+
+client = InferenceClient(
+    api_key=os.environ["HF_TOKEN"],
+    provider="auto"
+)
+
+MODEL = "Qwen/Qwen2.5-3B-Instruct"
 
 operators = {
     ast.Add: operator.add,
@@ -84,7 +92,6 @@ def chat():
     if not question:
         return jsonify({"reply": "Please type a message."})
 
-    # Instant calculator
     math_answer = try_math(question)
 
     if math_answer is not None:
@@ -95,47 +102,38 @@ def chat():
             "reply": f"Answer: {math_answer}"
         })
 
-    # AI explanation
-    response = ollama.chat(
-        model="llama3.2",
-        messages=[
-            {
-                "role": "system",
-                "content": """
-You are My AI.
+    try:
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are My AI. "
+                        "Answer clearly and directly. "
+                        "Give the answer first. "
+                        "Keep responses concise. "
+                        "Do not reveal private chain-of-thought."
+                    )
+                },
+                {
+                    "role": "user",
+                    "content": question
+                }
+            ],
+            temperature=0.1,
+            max_tokens=150
+        )
 
-Answer the user's question clearly.
+        return jsonify({
+            "reply": response.choices[0].message.content
+        })
 
-Give the answer first.
-
-Then briefly explain how you reached the answer when an explanation
-would be useful.
-
-For calculations, show the important calculation steps.
-
-Do not reveal private chain-of-thought or hidden reasoning.
-
-Understand spelling mistakes silently.
-
-Keep responses concise unless the user asks for more detail.
-"""
-            },
-            {
-                "role": "user",
-                "content": question
-            }
-        ],
-        options={
-            "temperature": 0.1,
-            "num_predict": 250
-        },
-        keep_alive="30m"
-    )
-
-    return jsonify({
-        "reply": response["message"]["content"]
-    })
+    except Exception as e:
+        return jsonify({
+            "reply": "Sorry, My AI could not answer right now."
+        })
 
 
 if __name__ == "__main__":
-    app.run(debug=True, use_reloader=False)
+    app.run(debug=False, use_reloader=False)
