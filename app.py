@@ -13,7 +13,7 @@ client = InferenceClient(
     provider="auto"
 )
 
-MODEL = "Qwen/Qwen2.5-3B-Instruct"
+MODEL = "deepseek-ai/DeepSeek-V3-0324"
 
 operators = {
     ast.Add: operator.add,
@@ -90,7 +90,9 @@ def chat():
     question = data.get("message", "").strip()
 
     if not question:
-        return jsonify({"reply": "Please type a message."})
+        return jsonify({
+            "reply": "Please type a message."
+        })
 
     math_answer = try_math(question)
 
@@ -121,7 +123,6 @@ def chat():
                     "content": question
                 }
             ],
-            temperature=0.1,
             max_tokens=150
         )
 
