@@ -130,7 +130,8 @@ def chat():
         })
 
     except Exception as e:
-        print("HUGGING FACE ERROR:", repr(e), flush=True)
+        print("HUGGING FACE ERROR:", str(e), flush=True)
+        print("ERROR TYPE:", type(e).__name__, flush=True)
 
         return jsonify({
             "reply": "AI error. Check Render logs."
