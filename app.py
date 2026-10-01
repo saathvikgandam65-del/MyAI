@@ -5,6 +5,7 @@ import operator
 import math
 import re
 import os
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -13,7 +14,8 @@ client = InferenceClient(
     provider="auto"
 )
 
-MODEL = "deepseek-ai/DeepSeek-V3-0324"
+MODEL = "Qwen/Qwen2.5-3B-Instruct"
+VOICE_MODEL = "openai/whisper-large-v3"
 
 operators = {
     ast.Add: operator.add,
@@ -79,6 +81,18 @@ def try_math(question):
         return None
 
 
+def log_chat(question, answer):
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    print("")
+    print("========== MY AI CHAT ==========", flush=True)
+    print("TIME:", timestamp, flush=True)
+    print("USER:", question, flush=True)
+    print("MY AI:", answer, flush=True)
+    print("================================", flush=True)
+    print("")
+
+
 @app.route("/")
 def home():
     return render_template("index.html")
@@ -100,8 +114,12 @@ def chat():
         if isinstance(math_answer, float) and math_answer.is_integer():
             math_answer = int(math_answer)
 
+        answer = f"Answer: {math_answer}"
+
+        log_chat(question, answer)
+
         return jsonify({
-            "reply": f"Answer: {math_answer}"
+            "reply": answer
         })
 
     try:
@@ -112,10 +130,7 @@ def chat():
                     "role": "system",
                     "content": (
                         "You are My AI. "
-                        "Answer clearly and directly. "
-                        "Give the answer first. "
-                        "Keep responses concise. "
-                        "Do not reveal private chain-of-thought."
+                        "Answer directly, clearly, and very briefly."
                     )
                 },
                 {
@@ -123,24 +138,74 @@ def chat():
                     "content": question
                 }
             ],
-            max_tokens=150
+            temperature=0.1,
+            max_tokens=80
         )
 
+        answer = response.choices[0].message.content
+
+        log_chat(question, answer)
+
         return jsonify({
-            "reply": response.choices[0].message.content
+            "reply": answer
         })
 
     except Exception as e:
-        print("========== HUGGING FACE ERROR ==========", flush=True)
-        print("ERROR TYPE:", type(e).__name__, flush=True)
+        print("========== AI ERROR ==========", flush=True)
         print("ERROR:", repr(e), flush=True)
-        print("ERROR ARGS:", getattr(e, "args", None), flush=True)
-        print("STATUS CODE:", getattr(e, "status_code", None), flush=True)
-        print("RESPONSE:", getattr(e, "response", None), flush=True)
-        print("========================================", flush=True)
+        print("==============================", flush=True)
 
         return jsonify({
-            "reply": "AI error. Check Render logs."
+            "reply": "AI error. Please try again."
+        }), 500
+
+
+# =========================
+# VOICE TRANSCRIPTION
+# =========================
+
+@app.route("/transcribe", methods=["POST"])
+def transcribe():
+
+    if "audio" not in request.files:
+        return jsonify({
+            "error": "No audio received."
+        }), 400
+
+    audio_file = request.files["audio"]
+
+    try:
+        audio_bytes = audio_file.read()
+
+        if not audio_bytes:
+            return jsonify({
+                "error": "The audio recording was empty."
+            }), 400
+
+        result = client.automatic_speech_recognition(
+            audio_bytes,
+            model=VOICE_MODEL
+        )
+
+        text = result.text.strip()
+
+        if not text:
+            return jsonify({
+                "error": "I couldn't understand the recording."
+            }), 400
+
+        return jsonify({
+            "text": text
+        })
+
+    except Exception as e:
+
+        print("========== VOICE ERROR ==========", flush=True)
+        print("ERROR:", repr(e), flush=True)
+        print("=================================", flush=True)
+
+        return jsonify({
+            "error": "Voice transcription failed."
         }), 500
 
 
