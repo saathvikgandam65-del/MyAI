@@ -1,572 +1,319 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session
 from huggingface_hub import InferenceClient
-import os
 import ast
 import operator
-import re
 import math
-import requests
+import re
+import os
 
 app = Flask(__name__)
 
-# =========================
-# HUGGING FACE
-# =========================
+# Session memory
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "myai-dev-secret-key")
 
 client = InferenceClient(
     api_key=os.environ["HF_TOKEN"],
     provider="auto"
 )
 
-CHAT_MODEL = "Qwen/Qwen3-4B-Instruct-2507"
-
-IMAGE_MODEL = "Qwen/Qwen-Image"
-EDIT_MODEL = "black-forest-labs/FLUX.1-Kontext-dev"
-VIDEO_MODEL = "Lightricks/LTX-Video-0.9.8-13B-distilled"
-IMAGE_VIDEO_MODEL = "Wan-AI/Wan2.2-I2V-A14B"
+MODEL = "Qwen/Qwen3-4B-Instruct-2507"
 VOICE_MODEL = "openai/whisper-large-v3"
 
+# Remember the last 50 messages
+MAX_HISTORY = 50
 
-# =========================
-# SAFE MATH
-# =========================
-
-OPERATORS = {
+operators = {
     ast.Add: operator.add,
     ast.Sub: operator.sub,
     ast.Mult: operator.mul,
     ast.Div: operator.truediv,
-    ast.Pow: operator.pow,
-    ast.Mod: operator.mod,
-    ast.USub: operator.neg,
-    ast.UAdd: operator.pos,
 }
 
 
-def safe_eval_math(expression):
-    try:
-        tree = ast.parse(expression, mode="eval")
+def calculate(expression):
+    def solve(node):
+        if isinstance(node, ast.Expression):
+            return solve(node.body)
 
-        def evaluate(node):
-            if isinstance(node, ast.Expression):
-                return evaluate(node.body)
+        if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
+            return node.value
 
-            if isinstance(node, ast.Constant):
-                if isinstance(node.value, (int, float)):
-                    return node.value
-                raise ValueError("Invalid number")
+        if isinstance(node, ast.BinOp) and type(node.op) in operators:
+            return operators[type(node.op)](
+                solve(node.left),
+                solve(node.right)
+            )
 
-            if isinstance(node, ast.BinOp):
-                operation = OPERATORS.get(type(node.op))
+        raise ValueError
 
-                if operation is None:
-                    raise ValueError("Invalid operator")
-
-                left = evaluate(node.left)
-                right = evaluate(node.right)
-
-                return operation(left, right)
-
-            if isinstance(node, ast.UnaryOp):
-                operation = OPERATORS.get(type(node.op))
-
-                if operation is None:
-                    raise ValueError("Invalid operator")
-
-                return operation(evaluate(node.operand))
-
-            raise ValueError("Invalid expression")
-
-        return evaluate(tree)
-
-    except Exception:
-        return None
+    return solve(ast.parse(expression, mode="eval"))
 
 
-def try_math(text):
-    original = text.strip()
-    lower = original.lower()
+def try_math(question):
+    text = question.lower().strip()
 
-    # Square root
-    match = re.search(
-        r"square root of\s+(-?\d+(?:\.\d+)?)",
-        lower
-    )
-
-    if match:
-        number = float(match.group(1))
-
-        if number < 0:
+    if "square root of" in text:
+        try:
+            number = text.split("square root of", 1)[1]
+            number = number.replace("?", "").strip()
+            return math.sqrt(float(number))
+        except:
             return None
 
-        result = math.sqrt(number)
+    if "%" in text and "of" in text:
+        try:
+            parts = text.replace("%", "").split("of", 1)
+            percent = float(parts[0].strip())
+            number = float(parts[1].strip())
+            return (percent / 100) * number
+        except:
+            return None
 
-        if result.is_integer():
-            return str(int(result))
+    expression = text
+    expression = expression.replace("×", "*")
+    expression = expression.replace("÷", "/")
+    expression = expression.replace("times", "*")
+    expression = expression.replace("plus", "+")
+    expression = expression.replace("minus", "-")
+    expression = expression.replace("divided by", "/")
+    expression = expression.replace("multiplied by", "*")
+    expression = re.sub(r"what is", "", expression)
+    expression = expression.replace("?", "").strip()
 
-        return str(result)
-
-    # Percent
-    match = re.search(
-        r"(-?\d+(?:\.\d+)?)\s*%\s*(?:of)\s*(-?\d+(?:\.\d+)?)",
-        lower
-    )
-
-    if match:
-        percent = float(match.group(1))
-        number = float(match.group(2))
-        result = percent / 100 * number
-
-        if result.is_integer():
-            return str(int(result))
-
-        return str(result)
-
-    expression = lower
-
-    expression = expression.replace("what is", "")
-    expression = expression.replace("calculate", "")
-    expression = expression.replace("please", "")
-
-    replacements = [
-        ("multiplied by", "*"),
-        ("divided by", "/"),
-        ("times", "*"),
-        ("plus", "+"),
-        ("minus", "-"),
-        ("×", "*"),
-        ("÷", "/"),
-    ]
-
-    for old, new in replacements:
-        expression = expression.replace(old, new)
-
-    expression = expression.replace("?", "")
-    expression = expression.strip()
-
-    # Only allow math characters
-    if not re.fullmatch(r"[0-9+\-*/().\s]+", expression):
-        return None
-
-    if not any(char.isdigit() for char in expression):
-        return None
-
-    result = safe_eval_math(expression)
-
-    if result is None:
-        return None
-
-    if isinstance(result, float) and result.is_integer():
-        return str(int(result))
-
-    return str(result)
-
-
-# =========================
-# TAVILY WEB SEARCH
-# =========================
-
-def web_search(query, max_results=5):
     try:
-        print("WEB SEARCH:", query, flush=True)
-
-        api_key = os.environ.get("TAVILY_API_KEY")
-
-        if not api_key:
-            print(
-                "WEB SEARCH ERROR: TAVILY_API_KEY is missing",
-                flush=True
-            )
-            return ""
-
-        response = requests.post(
-            "https://api.tavily.com/search",
-            headers={
-                "Content-Type": "application/json"
-            },
-            json={
-                "api_key": api_key,
-                "query": query,
-                "search_depth": "basic",
-                "max_results": max_results,
-                "include_answer": True
-            },
-            timeout=30
-        )
-
-        response.raise_for_status()
-
-        data = response.json()
-
-        formatted = []
-
-        answer = data.get("answer")
-
-        if answer:
-            formatted.append(
-                f"Answer: {answer}"
-            )
-
-        for result in data.get("results", []):
-            title = result.get("title", "")
-            content = result.get("content", "")
-            url = result.get("url", "")
-
-            formatted.append(
-                f"Title: {title}\n"
-                f"Summary: {content}\n"
-                f"Source: {url}"
-            )
-
-        if not formatted:
-            print(
-                "WEB SEARCH: No results found",
-                flush=True
-            )
-            return ""
-
-        print(
-            "WEB SEARCH SUCCESS:",
-            len(formatted),
-            "results",
-            flush=True
-        )
-
-        return "\n\n".join(formatted)
-
-    except Exception as e:
-        print(
-            "WEB SEARCH ERROR:",
-            repr(e),
-            flush=True
-        )
-        return ""
+        return calculate(expression)
+    except:
+        return None
 
 
-# =========================
-# CLEAN AI RESPONSE
-# =========================
-
-def clean_ai_response(text):
-    if not text:
-        return ""
-
-    # Remove Qwen thinking blocks if they appear
-    text = re.sub(
-        r"<think>.*?</think>",
-        "",
-        text,
-        flags=re.DOTALL | re.IGNORECASE
-    )
-
-    return text.strip()
+def get_history():
+    return session.get("chat_history", [])
 
 
-# =========================
-# HOME PAGE
-# =========================
+def save_history(history):
+    session["chat_history"] = history[-MAX_HISTORY:]
+    session.modified = True
+
 
 @app.route("/")
 def home():
+    session.permanent = True
     return render_template("index.html")
 
 
-# =========================
-# CHAT
-# =========================
-
 @app.route("/chat", methods=["POST"])
 def chat():
+
+    data = request.get_json(silent=True) or {}
+    question = data.get("message", "").strip()
+
+    if not question:
+        return jsonify({
+            "response": "Please type a message."
+        })
+
+    history = get_history()
+
+    # -------------------------
+    # CLEAR MEMORY
+    # -------------------------
+
+    if question.lower() in [
+        "clear memory",
+        "forget everything",
+        "forget our conversation",
+        "delete our conversation"
+    ]:
+        session.pop("chat_history", None)
+
+        return jsonify({
+            "response": "Done. I cleared our conversation memory."
+        })
+
+    # -------------------------
+    # SHOW MEMORY
+    # -------------------------
+
+    if question.lower() in [
+        "what do you remember?",
+        "what do you remember about me?",
+        "show my memory"
+    ]:
+
+        if not history:
+            answer = "I don't have any conversation memory yet."
+        else:
+            user_messages = [
+                item["content"]
+                for item in history
+                if item["role"] == "user"
+            ]
+
+            recent = user_messages[-10:]
+
+            answer = (
+                "I remember our recent conversation. "
+                "Here are some things you've talked about:\n\n"
+                + "\n".join(f"• {item}" for item in recent)
+            )
+
+        return jsonify({
+            "response": answer
+        })
+
+    # -------------------------
+    # EXACT MATH
+    # -------------------------
+
+    math_answer = try_math(question)
+
+    if math_answer is not None:
+
+        if isinstance(math_answer, float) and math_answer.is_integer():
+            math_answer = int(math_answer)
+
+        answer = f"Answer: {math_answer}"
+
+        history.extend([
+            {
+                "role": "user",
+                "content": question
+            },
+            {
+                "role": "assistant",
+                "content": answer
+            }
+        ])
+
+        save_history(history)
+
+        return jsonify({
+            "response": answer
+        })
+
+    # -------------------------
+    # AI WITH MEMORY
+    # -------------------------
+
     try:
-        data = request.get_json() or {}
 
-        question = data.get("message", "").strip()
-
-        if not question:
-            return jsonify({
-                "response": "Please type a question."
-            })
-
-        # Try calculator first
-        math_answer = try_math(question)
-
-        if math_answer is not None:
-            return jsonify({
-                "response": math_answer
-            })
-
-        # Search current information
-        current_words = [
-            "latest",
-            "today",
-            "current",
-            "right now",
-            "recent",
-            "news",
-            "this week",
-            "this month",
-            "weather",
-            "price",
-            "stock",
-            "score",
-            "schedule"
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "You are My AI, a helpful personal AI assistant. "
+                    "You have conversation memory. "
+                    "Use previous messages to understand follow-up questions. "
+                    "If the user says 'it', 'that', 'this', 'the first one', "
+                    "'the second one', or similar words, look at the previous "
+                    "conversation to understand what they mean. "
+                    "Remember useful information from the conversation. "
+                    "Never claim to remember something that is not in the "
+                    "conversation history. "
+                    "Answer naturally and clearly."
+                )
+            }
         ]
 
-        should_search = any(
-            word in question.lower()
-            for word in current_words
+        # Add previous conversation
+        messages.extend(history[-MAX_HISTORY:])
+
+        # Add new message
+        messages.append({
+            "role": "user",
+            "content": question
+        })
+
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=messages,
+            temperature=0.2,
+            max_tokens=300
         )
 
-        web_context = ""
+        answer = response.choices[0].message.content
 
-        if should_search:
-            web_context = web_search(question)
+        # Save conversation
+        history.extend([
+            {
+                "role": "user",
+                "content": question
+            },
+            {
+                "role": "assistant",
+                "content": answer
+            }
+        ])
 
-        system_prompt = """
-You are My AI.
-
-Answer the user's question directly and accurately.
-
-Be helpful and concise.
-
-Do not show internal reasoning.
-
-Do not discuss hidden reasoning.
-
-If web search information is provided, use it to answer current questions.
-
-Do not invent current information.
-
-If sources are provided, use the information from those sources.
-"""
-
-        user_prompt = question
-
-        if web_context:
-            user_prompt = f"""
-User question:
-{question}
-
-Web search results:
-{web_context}
-
-Use the web search results to answer the user's question.
-Give a direct, useful answer.
-"""
-
-        result = client.chat.completions.create(
-            model=CHAT_MODEL,
-            messages=[
-                {
-                    "role": "system",
-                    "content": system_prompt
-                },
-                {
-                    "role": "user",
-                    "content": user_prompt
-                }
-            ],
-            max_tokens=800,
-            temperature=0.3
-        )
-
-        answer = result.choices[0].message.content
-
-        answer = clean_ai_response(answer)
+        save_history(history)
 
         return jsonify({
             "response": answer
         })
 
     except Exception as e:
-        print(
-            "CHAT ERROR:",
-            repr(e),
-            flush=True
-        )
+
+        print("========== AI ERROR ==========", flush=True)
+        print("ERROR:", repr(e), flush=True)
+        print("==============================", flush=True)
 
         return jsonify({
-            "response": "Sorry, something went wrong. Please try again."
+            "response": "AI error. Please try again."
         }), 500
 
 
 # =========================
-# IMAGE GENERATION
-# =========================
-
-@app.route("/generate-image", methods=["POST"])
-def generate_image():
-    try:
-        data = request.get_json() or {}
-
-        prompt = data.get("prompt", "").strip()
-
-        if not prompt:
-            return jsonify({
-                "error": "Please enter an image prompt."
-            }), 400
-
-        image = client.text_to_image(
-            prompt,
-            model=IMAGE_MODEL
-        )
-
-        # This endpoint may need frontend-specific handling
-        # depending on the Hugging Face provider response.
-        return jsonify({
-            "message": "Image generation request completed."
-        })
-
-    except Exception as e:
-        print(
-            "IMAGE ERROR:",
-            repr(e),
-            flush=True
-        )
-
-        return jsonify({
-            "error": str(e)
-        }), 500
-
-
-# =========================
-# IMAGE EDITING
-# =========================
-
-@app.route("/edit-image", methods=["POST"])
-def edit_image():
-    try:
-        image_file = request.files.get("image")
-        prompt = request.form.get("prompt", "").strip()
-
-        if not image_file:
-            return jsonify({
-                "error": "Please upload an image."
-            }), 400
-
-        if not prompt:
-            return jsonify({
-                "error": "Please enter an editing prompt."
-            }), 400
-
-        return jsonify({
-            "message": "Image editing request received."
-        })
-
-    except Exception as e:
-        print(
-            "EDIT IMAGE ERROR:",
-            repr(e),
-            flush=True
-        )
-
-        return jsonify({
-            "error": str(e)
-        }), 500
-
-
-# =========================
-# VIDEO GENERATION
-# =========================
-
-@app.route("/generate-video", methods=["POST"])
-def generate_video():
-    try:
-        data = request.get_json() or {}
-
-        prompt = data.get("prompt", "").strip()
-
-        if not prompt:
-            return jsonify({
-                "error": "Please enter a video prompt."
-            }), 400
-
-        return jsonify({
-            "message": "Video generation request received."
-        })
-
-    except Exception as e:
-        print(
-            "VIDEO ERROR:",
-            repr(e),
-            flush=True
-        )
-
-        return jsonify({
-            "error": str(e)
-        }), 500
-
-
-# =========================
-# IMAGE TO VIDEO
-# =========================
-
-@app.route("/image-to-video", methods=["POST"])
-def image_to_video():
-    try:
-        image_file = request.files.get("image")
-        prompt = request.form.get("prompt", "").strip()
-
-        if not image_file:
-            return jsonify({
-                "error": "Please upload an image."
-            }), 400
-
-        return jsonify({
-            "message": "Image-to-video request received."
-        })
-
-    except Exception as e:
-        print(
-            "IMAGE TO VIDEO ERROR:",
-            repr(e),
-            flush=True
-        )
-
-        return jsonify({
-            "error": str(e)
-        }), 500
-
-
-# =========================
-# TRANSCRIPTION
+# VOICE TRANSCRIPTION
 # =========================
 
 @app.route("/transcribe", methods=["POST"])
 def transcribe():
-    try:
-        audio_file = request.files.get("audio")
 
-        if not audio_file:
+    if "audio" not in request.files:
+        return jsonify({
+            "error": "No audio received."
+        }), 400
+
+    audio_file = request.files["audio"]
+
+    try:
+
+        audio_bytes = audio_file.read()
+
+        if not audio_bytes:
             return jsonify({
-                "error": "Please upload an audio file."
+                "error": "The audio recording was empty."
+            }), 400
+
+        result = client.automatic_speech_recognition(
+            audio_bytes,
+            model=VOICE_MODEL
+        )
+
+        text = result.text.strip()
+
+        if not text:
+            return jsonify({
+                "error": "I couldn't understand the recording."
             }), 400
 
         return jsonify({
-            "message": "Transcription request received."
+            "text": text
         })
 
     except Exception as e:
-        print(
-            "TRANSCRIBE ERROR:",
-            repr(e),
-            flush=True
-        )
+
+        print("========== VOICE ERROR ==========", flush=True)
+        print("ERROR:", repr(e), flush=True)
+        print("=================================", flush=True)
 
         return jsonify({
-            "error": str(e)
+            "error": "Voice transcription failed."
         }), 500
 
 
-# =========================
-# START APP
-# =========================
-
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-
     app.run(
-        host="0.0.0.0",
-        port=port,
-        debug=False
+        debug=False,
+        use_reloader=False
     )
