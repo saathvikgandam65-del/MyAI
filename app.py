@@ -9,14 +9,22 @@ from datetime import datetime
 
 app = Flask(**name**)
 
-# Hugging Face connection
+# =========================================================
+
+# HUGGING FACE CONNECTION
+
+# =========================================================
 
 client = InferenceClient(
 api_key=os.environ["HF_TOKEN"],
 provider="auto"
 )
 
-# AI model
+# =========================================================
+
+# AI MODEL
+
+# =========================================================
 
 MODEL = "Qwen/Qwen2.5-3B-Instruct"
 
@@ -396,127 +404,4 @@ except Exception as e:
 
     print(
         "========== AI ERROR ==========",
-        flush=True
-    )
-
-    print(
-        "ERROR:",
-        repr(e),
-        flush=True
-    )
-
-    print(
-        "MODEL:",
-        MODEL,
-        flush=True
-    )
-
-    print(
-        "==============================",
-        flush=True
-    )
-
-    return jsonify({
-        "reply":
-            "AI error. Please try again."
-    }), 500
-```
-
-# =========================================================
-
-# VOICE TRANSCRIPTION
-
-# =========================================================
-
-@app.route(
-"/transcribe",
-methods=["POST"]
-)
-def transcribe():
-
-```
-if "audio" not in request.files:
-
-    return jsonify({
-        "error":
-            "No audio received."
-    }), 400
-
-audio_file = request.files[
-    "audio"
-]
-
-try:
-
-    audio_bytes = (
-        audio_file.read()
-    )
-
-    if not audio_bytes:
-
-        return jsonify({
-            "error":
-                "The audio recording "
-                "was empty."
-        }), 400
-
-    result = (
-        client
-        .automatic_speech_recognition(
-            audio_bytes,
-            model=VOICE_MODEL
-        )
-    )
-
-    text = result.text.strip()
-
-    if not text:
-
-        return jsonify({
-            "error":
-                "I couldn't understand "
-                "the recording."
-        }), 400
-
-    return jsonify({
-        "text": text
-    })
-
-except Exception as e:
-
-    print(
-        "========== VOICE ERROR ==========",
-        flush=True
-    )
-
-    print(
-        "ERROR:",
-        repr(e),
-        flush=True
-    )
-
-    print(
-        "=================================",
-        flush=True
-    )
-
-    return jsonify({
-        "error":
-            "Voice transcription failed."
-    }), 500
-```
-
-# =========================================================
-
-# START
-
-# =========================================================
-
-if **name** == "**main**":
-
-```
-app.run(
-    debug=False,
-    use_reloader=False
-)
 ```
