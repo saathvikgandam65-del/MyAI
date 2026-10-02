@@ -25,10 +25,6 @@ body {
     height: 100vh;
 }
 
-/* =========================
-   SIDEBAR
-========================= */
-
 .sidebar {
     width: 250px;
     background: #11141b;
@@ -74,10 +70,6 @@ body {
 .sidebar-button:hover {
     background: #242936;
 }
-
-/* =========================
-   MAIN
-========================= */
 
 .main {
     flex: 1;
@@ -148,10 +140,6 @@ body {
     margin-top: 10px;
 }
 
-/* =========================
-   MODE BUTTONS
-========================= */
-
 .modes {
     max-width: 900px;
     width: calc(100% - 30px);
@@ -179,10 +167,6 @@ body {
     background: white;
     color: black;
 }
-
-/* =========================
-   INPUT
-========================= */
 
 .input-area {
     padding: 12px 15px 18px;
@@ -232,10 +216,6 @@ body {
     font-weight: bold;
 }
 
-/* =========================
-   FILE
-========================= */
-
 #fileInput {
     display: none;
 }
@@ -246,10 +226,6 @@ body {
     color: #9ba1ae;
     font-size: 13px;
 }
-
-/* =========================
-   LOADING
-========================= */
 
 .loading {
     display: inline-flex;
@@ -281,10 +257,6 @@ body {
         transform: translateY(-5px);
     }
 }
-
-/* =========================
-   MOBILE
-========================= */
 
 @media (max-width: 700px) {
 
@@ -324,8 +296,6 @@ body {
 
 <div class="app">
 
-    <!-- SIDEBAR -->
-
     <aside class="sidebar">
 
         <div class="logo">
@@ -358,15 +328,11 @@ body {
 
     </aside>
 
-
-    <!-- MAIN -->
-
     <main class="main">
 
         <div class="topbar">
             🤖 My AI
         </div>
-
 
         <section class="messages" id="messages">
 
@@ -382,9 +348,6 @@ body {
             </div>
 
         </section>
-
-
-        <!-- MODES -->
 
         <div class="modes">
 
@@ -425,11 +388,7 @@ body {
 
         </div>
 
-
         <div class="file-name" id="fileName"></div>
-
-
-        <!-- INPUT -->
 
         <div class="input-area">
 
@@ -458,6 +417,7 @@ body {
 
                 <button
                     class="icon-button"
+                    id="voiceButton"
                     title="Voice"
                     onclick="startVoice()">
                     🎤
@@ -477,21 +437,16 @@ body {
 
 </div>
 
-
 <script>
 
-/* ========================================================
-   VARIABLES
-======================================================== */
-
 let currentMode = "chat";
-
 let selectedFile = null;
+let currentRecorder = null;
 
 
-/* ========================================================
+/* =========================
    MODE
-======================================================== */
+========================= */
 
 function selectMode(mode) {
 
@@ -548,9 +503,9 @@ function selectMode(mode) {
 }
 
 
-/* ========================================================
+/* =========================
    FILE
-======================================================== */
+========================= */
 
 function fileSelected() {
 
@@ -569,14 +524,11 @@ function fileSelected() {
 }
 
 
-/* ========================================================
+/* =========================
    ADD MESSAGE
-======================================================== */
+========================= */
 
-function addMessage(
-    text,
-    type = "ai"
-) {
+function addMessage(text, type = "ai") {
 
     const welcome =
         document.getElementById("welcome");
@@ -606,14 +558,11 @@ function addMessage(
 }
 
 
-/* ========================================================
+/* =========================
    ADD IMAGE
-======================================================== */
+========================= */
 
-function addImage(
-    image,
-    label = "Generated image"
-) {
+function addImage(image, label = "Generated image") {
 
     const welcome =
         document.getElementById("welcome");
@@ -642,7 +591,6 @@ function addImage(
         document.createElement("img");
 
     img.src = image;
-
     img.alt = label;
 
     div.appendChild(img);
@@ -654,14 +602,11 @@ function addImage(
 }
 
 
-/* ========================================================
+/* =========================
    ADD VIDEO
-======================================================== */
+========================= */
 
-function addVideo(
-    video,
-    label = "Generated video"
-) {
+function addVideo(video, label = "Generated video") {
 
     const welcome =
         document.getElementById("welcome");
@@ -690,11 +635,8 @@ function addVideo(
         document.createElement("video");
 
     videoElement.src = video;
-
     videoElement.controls = true;
-
     videoElement.autoplay = false;
-
     videoElement.playsInline = true;
 
     div.appendChild(videoElement);
@@ -706,9 +648,9 @@ function addVideo(
 }
 
 
-/* ========================================================
+/* =========================
    LOADING
-======================================================== */
+========================= */
 
 function showLoading() {
 
@@ -726,9 +668,7 @@ function showLoading() {
         document.createElement("div");
 
     div.id = "loadingMessage";
-
-    div.className =
-        "message ai-message";
+    div.className = "message ai-message";
 
     div.innerHTML = `
         <div class="loading">
@@ -758,9 +698,9 @@ function removeLoading() {
 }
 
 
-/* ========================================================
-   SEND
-======================================================== */
+/* =========================
+   SEND MESSAGE
+========================= */
 
 async function sendMessage() {
 
@@ -772,37 +712,25 @@ async function sendMessage() {
     const text =
         input.value.trim();
 
-    if (
-        !text &&
-        !selectedFile
-    ) {
+    if (!text && !selectedFile) {
         return;
     }
 
-
-    /* USER MESSAGE */
-
     if (text) {
-        addMessage(
-            text,
-            "user"
-        );
+        addMessage(text, "user");
     }
 
     input.value = "";
 
     showLoading();
 
-
     try {
 
-        /* ================================================
-           NORMAL CHAT
-        ================================================ */
+        /* =========================
+           CHAT
+        ========================= */
 
-        if (
-            currentMode === "chat"
-        ) {
+        if (currentMode === "chat") {
 
             const response =
                 await fetch(
@@ -826,7 +754,14 @@ async function sendMessage() {
 
             removeLoading();
 
+            /*
+             * IMPORTANT FIX:
+             * Backend returns:
+             * {"response":"425"}
+             */
+
             addMessage(
+                data.response ||
                 data.reply ||
                 data.error ||
                 "Something went wrong."
@@ -836,13 +771,11 @@ async function sendMessage() {
         }
 
 
-        /* ================================================
-           IMAGE GENERATION
-        ================================================ */
+        /* =========================
+           IMAGE
+        ========================= */
 
-        if (
-            currentMode === "image"
-        ) {
+        if (currentMode === "image") {
 
             const response =
                 await fetch(
@@ -885,13 +818,11 @@ async function sendMessage() {
         }
 
 
-        /* ================================================
-           PHOTO EDITING
-        ================================================ */
+        /* =========================
+           EDIT PHOTO
+        ========================= */
 
-        if (
-            currentMode === "edit"
-        ) {
+        if (currentMode === "edit") {
 
             if (!selectedFile) {
 
@@ -950,13 +881,11 @@ async function sendMessage() {
         }
 
 
-        /* ================================================
-           TEXT → VIDEO
-        ================================================ */
+        /* =========================
+           VIDEO
+        ========================= */
 
-        if (
-            currentMode === "video"
-        ) {
+        if (currentMode === "video") {
 
             const response =
                 await fetch(
@@ -999,13 +928,11 @@ async function sendMessage() {
         }
 
 
-        /* ================================================
+        /* =========================
            IMAGE → VIDEO
-        ================================================ */
+        ========================= */
 
-        if (
-            currentMode === "image-video"
-        ) {
+        if (currentMode === "image-video") {
 
             if (!selectedFile) {
 
@@ -1086,9 +1013,9 @@ async function sendMessage() {
 }
 
 
-/* ========================================================
+/* =========================
    ENTER KEY
-======================================================== */
+========================= */
 
 document
     .getElementById("messageInput")
@@ -1109,9 +1036,9 @@ document
     );
 
 
-/* ========================================================
+/* =========================
    NEW CHAT
-======================================================== */
+========================= */
 
 function newChat() {
 
@@ -1145,11 +1072,27 @@ function newChat() {
 }
 
 
-/* ========================================================
+/* =========================
    VOICE
-======================================================== */
+========================= */
 
 async function startVoice() {
+
+    /*
+     * If already recording,
+     * clicking the microphone stops it.
+     */
+
+    if (
+        currentRecorder &&
+        currentRecorder.state === "recording"
+    ) {
+
+        currentRecorder.stop();
+
+        return;
+    }
+
 
     if (!navigator.mediaDevices) {
 
@@ -1171,6 +1114,8 @@ async function startVoice() {
         const recorder =
             new MediaRecorder(stream);
 
+        currentRecorder = recorder;
+
         const chunks = [];
 
         recorder.ondataavailable =
@@ -1191,6 +1136,8 @@ async function startVoice() {
                         track =>
                             track.stop()
                     );
+
+                currentRecorder = null;
 
                 const blob =
                     new Blob(
@@ -1245,7 +1192,9 @@ async function startVoice() {
                         );
                     }
 
-                } catch {
+                } catch (error) {
+
+                    console.error(error);
 
                     addMessage(
                         "Voice transcription failed."
@@ -1260,43 +1209,15 @@ async function startVoice() {
             "🎤 Recording... Click the microphone again to stop."
         );
 
-        window.currentRecorder =
-            recorder;
+    } catch (error) {
 
-    } catch {
+        console.error(error);
 
         addMessage(
             "Please allow microphone access."
         );
     }
 }
-
-
-/* ========================================================
-   MICROPHONE TOGGLE
-======================================================== */
-
-document
-    .querySelector(
-        'button[title="Voice"]'
-    )
-    .addEventListener(
-        "click",
-        function() {
-
-            if (
-                window.currentRecorder &&
-                window.currentRecorder.state ===
-                    "recording"
-            ) {
-
-                window.currentRecorder.stop();
-
-                window.currentRecorder =
-                    null;
-            }
-        }
-    );
 
 </script>
 
