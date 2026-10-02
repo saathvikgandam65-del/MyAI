@@ -25,32 +25,21 @@ client = InferenceClient(
 # MODELS
 # =========================================================
 
-# NON-THINKING CHAT MODEL
 CHAT_MODEL = "Qwen/Qwen3-4B-Instruct-2507"
 
-# Image generation
 IMAGE_MODEL = "Qwen/Qwen-Image"
 
-# Photo editing
 EDIT_MODEL = "black-forest-labs/FLUX.1-Kontext-dev"
 
-# Text → video
 VIDEO_MODEL = "Lightricks/LTX-Video-0.9.8-13B-distilled"
 
-# Image → video
 IMAGE_VIDEO_MODEL = "Wan-AI/Wan2.2-I2V-A14B"
 
-# Voice transcription
 VOICE_MODEL = "openai/whisper-large-v3"
 
 print("======================================", flush=True)
 print("             MY AI STARTED            ", flush=True)
 print("CHAT MODEL:", CHAT_MODEL, flush=True)
-print("IMAGE MODEL:", IMAGE_MODEL, flush=True)
-print("EDIT MODEL:", EDIT_MODEL, flush=True)
-print("VIDEO MODEL:", VIDEO_MODEL, flush=True)
-print("IMAGE VIDEO MODEL:", IMAGE_VIDEO_MODEL, flush=True)
-print("VOICE MODEL:", VOICE_MODEL, flush=True)
 print("======================================", flush=True)
 
 
@@ -59,14 +48,8 @@ print("======================================", flush=True)
 # =========================================================
 
 def web_search(query, max_results=5):
-
     try:
-
-        print(
-            "WEB SEARCH:",
-            query,
-            flush=True
-        )
+        print("WEB SEARCH:", query, flush=True)
 
         results = DDGS().text(
             query,
@@ -81,21 +64,9 @@ def web_search(query, max_results=5):
         formatted = []
 
         for result in results:
-
-            title = result.get(
-                "title",
-                ""
-            )
-
-            body = result.get(
-                "body",
-                ""
-            )
-
-            url = result.get(
-                "href",
-                ""
-            )
+            title = result.get("title", "")
+            body = result.get("body", "")
+            url = result.get("href", "")
 
             formatted.append(
                 f"Title: {title}\n"
@@ -103,18 +74,10 @@ def web_search(query, max_results=5):
                 f"Source: {url}"
             )
 
-        return "\n\n".join(
-            formatted
-        )
+        return "\n\n".join(formatted)
 
     except Exception as e:
-
-        print(
-            "WEB SEARCH ERROR:",
-            repr(e),
-            flush=True
-        )
-
+        print("WEB SEARCH ERROR:", repr(e), flush=True)
         return ""
 
 
@@ -123,7 +86,6 @@ def web_search(query, max_results=5):
 # =========================================================
 
 def needs_web_search(question):
-
     text = question.lower()
 
     search_words = [
@@ -151,10 +113,7 @@ def needs_web_search(question):
         "2026"
     ]
 
-    return any(
-        word in text
-        for word in search_words
-    )
+    return any(word in text for word in search_words)
 
 
 # =========================================================
@@ -173,38 +132,20 @@ def calculate(expression):
 
     def solve(node):
 
-        if isinstance(
-            node,
-            ast.Expression
-        ):
-            return solve(
-                node.body
-            )
+        if isinstance(node, ast.Expression):
+            return solve(node.body)
 
         if (
-            isinstance(
-                node,
-                ast.Constant
-            )
-            and
-            isinstance(
-                node.value,
-                (int, float)
-            )
+            isinstance(node, ast.Constant)
+            and isinstance(node.value, (int, float))
         ):
             return node.value
 
         if (
-            isinstance(
-                node,
-                ast.BinOp
-            )
-            and
-            type(node.op) in operators
+            isinstance(node, ast.BinOp)
+            and type(node.op) in operators
         ):
-            return operators[
-                type(node.op)
-            ](
+            return operators[type(node.op)](
                 solve(node.left),
                 solve(node.right)
             )
@@ -229,9 +170,7 @@ def try_math(question):
 
     # Square root
     if "square root of" in text:
-
         try:
-
             number = text.split(
                 "square root of",
                 1
@@ -242,35 +181,24 @@ def try_math(question):
                 ""
             ).strip()
 
-            return math.sqrt(
-                float(number)
-            )
+            return math.sqrt(float(number))
 
         except:
             return None
 
     # Percent
     if "%" in text and "of" in text:
-
         try:
-
             parts = (
                 text
                 .replace("%", "")
                 .split("of", 1)
             )
 
-            percent = float(
-                parts[0].strip()
-            )
+            percent = float(parts[0].strip())
+            number = float(parts[1].strip())
 
-            number = float(
-                parts[1].strip()
-            )
-
-            return (
-                percent / 100
-            ) * number
+            return (percent / 100) * number
 
         except:
             return None
@@ -278,40 +206,13 @@ def try_math(question):
     # Normal math
     expression = text
 
-    expression = expression.replace(
-        "×",
-        "*"
-    )
-
-    expression = expression.replace(
-        "÷",
-        "/"
-    )
-
-    expression = expression.replace(
-        "times",
-        "*"
-    )
-
-    expression = expression.replace(
-        "plus",
-        "+"
-    )
-
-    expression = expression.replace(
-        "minus",
-        "-"
-    )
-
-    expression = expression.replace(
-        "divided by",
-        "/"
-    )
-
-    expression = expression.replace(
-        "multiplied by",
-        "*"
-    )
+    expression = expression.replace("×", "*")
+    expression = expression.replace("÷", "/")
+    expression = expression.replace("times", "*")
+    expression = expression.replace("plus", "+")
+    expression = expression.replace("minus", "-")
+    expression = expression.replace("divided by", "/")
+    expression = expression.replace("multiplied by", "*")
 
     expression = re.sub(
         r"what is",
@@ -325,18 +226,14 @@ def try_math(question):
     ).strip()
 
     try:
-
-        return calculate(
-            expression
-        )
+        return calculate(expression)
 
     except:
-
         return None
 
 
 # =========================================================
-# CLEAN CHAT RESPONSE
+# CLEAN AI RESPONSE
 # =========================================================
 
 def clean_ai_response(answer):
@@ -346,7 +243,6 @@ def clean_ai_response(answer):
 
     answer = answer.strip()
 
-    # Remove complete thinking blocks
     answer = re.sub(
         r"<think>.*?</think>",
         "",
@@ -354,22 +250,17 @@ def clean_ai_response(answer):
         flags=re.DOTALL | re.IGNORECASE
     ).strip()
 
-    # If an ending think tag exists,
-    # keep only the answer after it.
     if "</think>" in answer:
-
         answer = answer.split(
             "</think>",
             1
         )[1].strip()
 
-    # Remove accidental opening tag
     answer = answer.replace(
         "<think>",
         ""
     ).strip()
 
-    # Remove common final-answer labels
     answer = re.sub(
         r"^(final answer|final response|answer)\s*:\s*",
         "",
@@ -393,9 +284,7 @@ def log_chat(question, answer):
 
     print(
         "TIME:",
-        datetime.now().strftime(
-            "%Y-%m-%d %H:%M:%S"
-        ),
+        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         flush=True
     )
 
@@ -423,20 +312,14 @@ def log_chat(question, answer):
 
 @app.route("/")
 def home():
-
-    return render_template(
-        "index.html"
-    )
+    return render_template("index.html")
 
 
 # =========================================================
-# NORMAL CHAT
+# CHAT
 # =========================================================
 
-@app.route(
-    "/chat",
-    methods=["POST"]
-)
+@app.route("/chat", methods=["POST"])
 def chat():
 
     try:
@@ -444,10 +327,8 @@ def chat():
         data = request.get_json()
 
         if not data:
-
             return jsonify({
-                "reply":
-                    "Please type a message."
+                "reply": "Please type a message."
             }), 400
 
         question = data.get(
@@ -456,38 +337,25 @@ def chat():
         ).strip()
 
         if not question:
-
             return jsonify({
-                "reply":
-                    "Please type a message."
+                "reply": "Please type a message."
             })
 
         # =================================================
         # MATH FIRST
         # =================================================
 
-        math_answer = try_math(
-            question
-        )
+        math_answer = try_math(question)
 
         if math_answer is not None:
 
             if (
-                isinstance(
-                    math_answer,
-                    float
-                )
-                and
-                math_answer.is_integer()
+                isinstance(math_answer, float)
+                and math_answer.is_integer()
             ):
+                math_answer = int(math_answer)
 
-                math_answer = int(
-                    math_answer
-                )
-
-            answer = (
-                f"Answer: {math_answer}"
-            )
+            answer = f"Answer: {math_answer}"
 
             log_chat(
                 question,
@@ -504,17 +372,14 @@ def chat():
 
         web_context = ""
 
-        if needs_web_search(
-            question
-        ):
-
+        if needs_web_search(question):
             web_context = web_search(
                 question,
                 max_results=5
             )
 
         # =================================================
-        # NON-THINKING QWEN
+        # SEND TO QWEN
         # =================================================
 
         user_message = question
@@ -527,8 +392,7 @@ def chat():
                 + "WEB SEARCH RESULTS:\n"
                 + web_context
                 + "\n\n"
-                + "Use the web results when "
-                + "they are relevant. "
+                + "Use the web results when relevant. "
                 + "Answer the user directly. "
                 + "Do not mention internal reasoning."
             )
@@ -547,7 +411,9 @@ def chat():
                         "Be concise and helpful. "
                         "Do not show internal reasoning. "
                         "Do not discuss your reasoning. "
-                        "Give the answer directly."
+                        "Give the answer directly. "
+                        "If web search results are provided, "
+                        "use them for current information."
                     )
                 },
                 {
@@ -568,15 +434,10 @@ def chat():
             .content
         )
 
-        answer = clean_ai_response(
-            answer
-        )
+        answer = clean_ai_response(answer)
 
         if not answer:
-
-            answer = (
-                "I couldn't generate an answer."
-            )
+            answer = "I couldn't generate an answer."
 
         log_chat(
             question,
@@ -605,10 +466,7 @@ def chat():
 # GENERATE IMAGE
 # =========================================================
 
-@app.route(
-    "/generate-image",
-    methods=["POST"]
-)
+@app.route("/generate-image", methods=["POST"])
 def generate_image():
 
     try:
@@ -621,7 +479,6 @@ def generate_image():
         ).strip()
 
         if not prompt:
-
             return jsonify({
                 "error":
                     "Please describe the image."
@@ -634,15 +491,10 @@ def generate_image():
         )
 
         image = client.text_to_image(
-
             prompt=prompt,
-
             model=IMAGE_MODEL,
-
             width=1024,
-
             height=1024,
-
             num_inference_steps=20
         )
 
@@ -683,27 +535,21 @@ def generate_image():
 
 
 # =========================================================
-# EDIT UPLOADED PHOTO
+# EDIT IMAGE
 # =========================================================
 
-@app.route(
-    "/edit-image",
-    methods=["POST"]
-)
+@app.route("/edit-image", methods=["POST"])
 def edit_image():
 
     try:
 
         if "image" not in request.files:
-
             return jsonify({
                 "error":
                     "Please upload a photo."
             }), 400
 
-        image_file = request.files[
-            "image"
-        ]
+        image_file = request.files["image"]
 
         prompt = request.form.get(
             "prompt",
@@ -711,7 +557,6 @@ def edit_image():
         ).strip()
 
         if not prompt:
-
             return jsonify({
                 "error":
                     "Tell me what you want changed."
@@ -720,7 +565,6 @@ def edit_image():
         image_bytes = image_file.read()
 
         if not image_bytes:
-
             return jsonify({
                 "error":
                     "The uploaded photo is empty."
@@ -733,11 +577,8 @@ def edit_image():
         )
 
         edited = client.image_to_image(
-
             image_bytes,
-
             prompt=prompt,
-
             model=EDIT_MODEL
         )
 
@@ -778,13 +619,10 @@ def edit_image():
 
 
 # =========================================================
-# GENERATE VIDEO FROM TEXT
+# TEXT → VIDEO
 # =========================================================
 
-@app.route(
-    "/generate-video",
-    methods=["POST"]
-)
+@app.route("/generate-video", methods=["POST"])
 def generate_video():
 
     try:
@@ -797,7 +635,6 @@ def generate_video():
         ).strip()
 
         if not prompt:
-
             return jsonify({
                 "error":
                     "Please describe the video."
@@ -810,11 +647,8 @@ def generate_video():
         )
 
         video = client.text_to_video(
-
             prompt,
-
             model=VIDEO_MODEL,
-
             num_inference_steps=20
         )
 
@@ -850,24 +684,18 @@ def generate_video():
 # IMAGE → VIDEO
 # =========================================================
 
-@app.route(
-    "/image-to-video",
-    methods=["POST"]
-)
+@app.route("/image-to-video", methods=["POST"])
 def image_to_video():
 
     try:
 
         if "image" not in request.files:
-
             return jsonify({
                 "error":
                     "Please upload an image."
             }), 400
 
-        image_file = request.files[
-            "image"
-        ]
+        image_file = request.files["image"]
 
         prompt = request.form.get(
             "prompt",
@@ -877,14 +705,12 @@ def image_to_video():
         image_bytes = image_file.read()
 
         if not image_bytes:
-
             return jsonify({
                 "error":
                     "The image is empty."
             }), 400
 
         if not prompt:
-
             prompt = (
                 "Create a natural cinematic "
                 "animation from this image."
@@ -897,13 +723,9 @@ def image_to_video():
         )
 
         video = client.image_to_video(
-
             image_bytes,
-
             model=IMAGE_VIDEO_MODEL,
-
             prompt=prompt,
-
             num_inference_steps=20
         )
 
@@ -938,45 +760,35 @@ def image_to_video():
 # VOICE TRANSCRIPTION
 # =========================================================
 
-@app.route(
-    "/transcribe",
-    methods=["POST"]
-)
+@app.route("/transcribe", methods=["POST"])
 def transcribe():
 
     try:
 
         if "audio" not in request.files:
-
             return jsonify({
                 "error":
                     "No audio received."
             }), 400
 
-        audio_file = request.files[
-            "audio"
-        ]
+        audio_file = request.files["audio"]
 
         audio_bytes = audio_file.read()
 
         if not audio_bytes:
-
             return jsonify({
                 "error":
                     "The recording was empty."
             }), 400
 
         result = client.automatic_speech_recognition(
-
             audio_bytes,
-
             model=VOICE_MODEL
         )
 
         text = result.text.strip()
 
         if not text:
-
             return jsonify({
                 "error":
                     "I couldn't understand the recording."
