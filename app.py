@@ -91,6 +91,7 @@ init_db()
 def login_required(function):
     @wraps(function)
     def wrapper(*args, **kwargs):
+
         if "user_id" not in session:
             return jsonify({
                 "error": "Please log in first."
@@ -102,6 +103,7 @@ def login_required(function):
 
 
 def get_current_user():
+
     user_id = session.get("user_id")
 
     if not user_id:
@@ -160,10 +162,10 @@ def try_math(question):
 
     text = question.lower().strip()
 
-    # Square root
     if "square root of" in text:
 
         try:
+
             number = text.split(
                 "square root of",
                 1
@@ -179,7 +181,6 @@ def try_math(question):
         except:
             return None
 
-    # Percentage
     if "%" in text and "of" in text:
 
         try:
@@ -207,40 +208,13 @@ def try_math(question):
 
     expression = text
 
-    expression = expression.replace(
-        "×",
-        "*"
-    )
-
-    expression = expression.replace(
-        "÷",
-        "/"
-    )
-
-    expression = expression.replace(
-        "times",
-        "*"
-    )
-
-    expression = expression.replace(
-        "plus",
-        "+"
-    )
-
-    expression = expression.replace(
-        "minus",
-        "-"
-    )
-
-    expression = expression.replace(
-        "divided by",
-        "/"
-    )
-
-    expression = expression.replace(
-        "multiplied by",
-        "*"
-    )
+    expression = expression.replace("×", "*")
+    expression = expression.replace("÷", "/")
+    expression = expression.replace("times", "*")
+    expression = expression.replace("plus", "+")
+    expression = expression.replace("minus", "-")
+    expression = expression.replace("divided by", "/")
+    expression = expression.replace("multiplied by", "*")
 
     expression = re.sub(
         r"what is",
@@ -261,10 +235,13 @@ def try_math(question):
 
 
 # =========================
-# CONVERSATION HELPERS
+# CONVERSATIONS
 # =========================
 
-def create_conversation(user_id, title="New Chat"):
+def create_conversation(
+    user_id,
+    title="New Chat"
+):
 
     now = datetime.now().isoformat()
 
@@ -337,6 +314,8 @@ def save_message(
 
     conn = get_db()
 
+    now = datetime.now().isoformat()
+
     conn.execute(
         """
         INSERT INTO messages
@@ -347,7 +326,7 @@ def save_message(
             conversation_id,
             role,
             content,
-            datetime.now().isoformat()
+            now
         )
     )
 
@@ -358,7 +337,7 @@ def save_message(
         WHERE id = ?
         """,
         (
-            datetime.now().isoformat(),
+            now,
             conversation_id
         )
     )
@@ -400,13 +379,9 @@ def get_messages(conversation_id):
 def home():
 
     if "user_id" not in session:
-        return render_template(
-            "index.html"
-        )
+        return render_template("auth.html")
 
-    return render_template(
-        "index.html"
-    )
+    return render_template("index.html")
 
 
 # =========================
@@ -436,13 +411,15 @@ def signup():
     if not email or not password:
 
         return jsonify({
-            "error": "Email and password are required."
+            "error":
+                "Email and password are required."
         }), 400
 
     if len(password) < 6:
 
         return jsonify({
-            "error": "Password must be at least 6 characters."
+            "error":
+                "Password must be at least 6 characters."
         }), 400
 
     conn = get_db()
@@ -461,7 +438,8 @@ def signup():
         conn.close()
 
         return jsonify({
-            "error": "An account with that email already exists."
+            "error":
+                "An account with that email already exists."
         }), 409
 
     password_hash = generate_password_hash(
@@ -541,7 +519,8 @@ def login():
     if not user:
 
         return jsonify({
-            "error": "Invalid email or password."
+            "error":
+                "Invalid email or password."
         }), 401
 
     if not check_password_hash(
@@ -550,7 +529,8 @@ def login():
     ):
 
         return jsonify({
-            "error": "Invalid email or password."
+            "error":
+                "Invalid email or password."
         }), 401
 
     session["user_id"] = user["id"]
@@ -602,7 +582,7 @@ def me():
 
 
 # =========================
-# CONVERSATIONS
+# CONVERSATION LIST
 # =========================
 
 @app.route(
@@ -641,6 +621,10 @@ def conversations():
     })
 
 
+# =========================
+# NEW CONVERSATION
+# =========================
+
 @app.route(
     "/api/conversations",
     methods=["POST"]
@@ -675,6 +659,10 @@ def new_conversation():
     })
 
 
+# =========================
+# LOAD CONVERSATION
+# =========================
+
 @app.route(
     "/api/conversations/<int:conversation_id>",
     methods=["GET"]
@@ -706,7 +694,8 @@ def get_conversation(
     if not conversation:
 
         return jsonify({
-            "error": "Conversation not found."
+            "error":
+                "Conversation not found."
         }), 404
 
     session["conversation_id"] = conversation_id
@@ -721,6 +710,10 @@ def get_conversation(
         "messages": messages
     })
 
+
+# =========================
+# DELETE CONVERSATION
+# =========================
 
 @app.route(
     "/api/conversations/<int:conversation_id>",
@@ -753,7 +746,8 @@ def delete_conversation(
         conn.close()
 
         return jsonify({
-            "error": "Conversation not found."
+            "error":
+                "Conversation not found."
         }), 404
 
     conn.execute(
@@ -812,7 +806,8 @@ def chat():
     if not question:
 
         return jsonify({
-            "response": "Please type a message."
+            "response":
+                "Please type a message."
         })
 
     user_id = session["user_id"]
@@ -825,9 +820,7 @@ def chat():
         conversation_id
     )
 
-    # =========================
     # CLEAR MEMORY
-    # =========================
 
     if question.lower() in [
         "clear memory",
@@ -850,13 +843,12 @@ def chat():
         conn.close()
 
         return jsonify({
-            "response": "Done. I cleared this conversation's memory."
+            "response":
+                "Done. I cleared this conversation's memory."
         })
 
 
-    # =========================
     # SHOW MEMORY
-    # =========================
 
     if question.lower() in [
         "what do you remember?",
@@ -908,9 +900,7 @@ def chat():
         })
 
 
-    # =========================
     # EXACT MATH
-    # =========================
 
     math_answer = try_math(
         question
@@ -950,9 +940,7 @@ def chat():
         })
 
 
-    # =========================
     # AI WITH MEMORY
-    # =========================
 
     try:
 
@@ -999,21 +987,18 @@ def chat():
             .content
         )
 
-        # Save user message
         save_message(
             conversation_id,
             "user",
             question
         )
 
-        # Save AI message
         save_message(
             conversation_id,
             "assistant",
             answer
         )
 
-        # Automatically give the chat a title
         if len(history) == 0:
 
             title = question[:45]
@@ -1069,7 +1054,7 @@ def chat():
 
 
 # =========================
-# VOICE TRANSCRIPTION
+# VOICE
 # =========================
 
 @app.route(
@@ -1082,18 +1067,15 @@ def transcribe():
     if "audio" not in request.files:
 
         return jsonify({
-            "error": "No audio received."
+            "error":
+                "No audio received."
         }), 400
 
-    audio_file = request.files[
-        "audio"
-    ]
+    audio_file = request.files["audio"]
 
     try:
 
-        audio_bytes = (
-            audio_file.read()
-        )
+        audio_bytes = audio_file.read()
 
         if not audio_bytes:
 
@@ -1102,12 +1084,9 @@ def transcribe():
                     "The audio recording was empty."
             }), 400
 
-        result = (
-            client
-            .automatic_speech_recognition(
-                audio_bytes,
-                model=VOICE_MODEL
-            )
+        result = client.automatic_speech_recognition(
+            audio_bytes,
+            model=VOICE_MODEL
         )
 
         text = result.text.strip()
@@ -1148,7 +1127,7 @@ def transcribe():
 
 
 # =========================
-# START APP
+# START
 # =========================
 
 if __name__ == "__main__":
