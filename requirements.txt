@@ -1,4 +1,4 @@
 Flask
 gunicorn
 huggingface_hub
-Pillow
+ddgs
