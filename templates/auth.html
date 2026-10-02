@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My AI - Login</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: Arial, sans-serif;
+            background:
+                radial-gradient(circle at top, #202a44, #090b10 55%);
+            color: white;
+        }
+
+        .card {
+            width: 390px;
+            max-width: 92%;
+            padding: 35px;
+            border-radius: 22px;
+            background: rgba(20, 23, 32, 0.94);
+            border: 1px solid #303746;
+            box-shadow: 0 20px 60px rgba(0,0,0,.45);
+        }
+
+        .logo {
+            text-align: center;
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #9da6b8;
+            margin-bottom: 28px;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 22px;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px;
+            margin-bottom: 14px;
+            border-radius: 12px;
+            border: 1px solid #394152;
+            background: #11151d;
+            color: white;
+            font-size: 15px;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: #6d7cff;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            background: #6d7cff;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 4px;
+        }
+
+        button:hover {
+            background: #5968f0;
+        }
+
+        .switch {
+            text-align: center;
+            margin-top: 20px;
+            color: #9da6b8;
+        }
+
+        .switch span {
+            color: #8794ff;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .error {
+            color: #ff7777;
+            text-align: center;
+            margin-top: 14px;
+            min-height: 20px;
+        }
+
+        .success {
+            color: #70e39b;
+            text-align: center;
+            margin-top: 14px;
+            min-height: 20px;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="card">
+
+    <div class="logo">🤖 My AI</div>
+
+    <div class="subtitle">
+        Your personal AI assistant
+    </div>
+
+    <!-- LOGIN -->
+
+    <div id="loginBox">
+
+        <h2>Welcome Back</h2>
+
+        <input
+            id="loginEmail"
+            type="email"
+            placeholder="Email"
+            autocomplete="email"
+        >
+
+        <input
+            id="loginPassword"
+            type="password"
+            placeholder="Password"
+            autocomplete="current-password"
+        >
+
+        <button onclick="login()">
+            Log In
+        </button>
+
+        <div id="loginMessage" class="error"></div>
+
+        <div class="switch">
+            Don't have an account?
+            <span onclick="showSignup()">Sign up</span>
+        </div>
+
+    </div>
+
+
+    <!-- SIGN UP -->
+
+    <div id="signupBox" class="hidden">
+
+        <h2>Create Account</h2>
+
+        <input
+            id="signupEmail"
+            type="email"
+            placeholder="Email"
+            autocomplete="email"
+        >
+
+        <input
+            id="signupPassword"
+            type="password"
+            placeholder="Create password"
+            autocomplete="new-password"
+        >
+
+        <input
+            id="signupPassword2"
+            type="password"
+            placeholder="Confirm password"
+            autocomplete="new-password"
+        >
+
+        <button onclick="signup()">
+            Create Account
+        </button>
+
+        <div id="signupMessage" class="error"></div>
+
+        <div class="switch">
+            Already have an account?
+            <span onclick="showLogin()">Log in</span>
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+function showSignup() {
+
+    document
+        .getElementById("loginBox")
+        .classList.add("hidden");
+
+    document
+        .getElementById("signupBox")
+        .classList.remove("hidden");
+
+}
+
+
+function showLogin() {
+
+    document
+        .getElementById("signupBox")
+        .classList.add("hidden");
+
+    document
+        .getElementById("loginBox")
+        .classList.remove("hidden");
+
+}
+
+
+async function login() {
+
+    const email =
+        document
+        .getElementById("loginEmail")
+        .value
+        .trim();
+
+    const password =
+        document
+        .getElementById("loginPassword")
+        .value;
+
+    const message =
+        document
+        .getElementById("loginMessage");
+
+    message.className = "error";
+    message.textContent = "";
+
+    if (!email || !password) {
+
+        message.textContent =
+            "Please enter your email and password.";
+
+        return;
+    }
+
+    try {
+
+        const response = await fetch(
+            "/login",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+                body: JSON.stringify({
+                    email: email,
+                    password: password
+                })
+            }
+        );
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+
+            message.textContent =
+                data.error ||
+                "Login failed.";
+
+            return;
+        }
+
+        message.className = "success";
+        message.textContent =
+            "Login successful!";
+
+        setTimeout(() => {
+            window.location.href = "/";
+        }, 500);
+
+    } catch (error) {
+
+        message.textContent =
+            "Something went wrong. Please try again.";
+    }
+}
+
+
+async function signup() {
+
+    const email =
+        document
+        .getElementById("signupEmail")
+        .value
+        .trim();
+
+    const password =
+        document
+        .getElementById("signupPassword")
+        .value;
+
+    const password2 =
+        document
+        .getElementById("signupPassword2")
+        .value;
+
+    const message =
+        document
+        .getElementById("signupMessage");
+
+    message.className = "error";
+    message.textContent = "";
+
+    if (!email || !password || !password2) {
+
+        message.textContent =
+            "Please fill in all fields.";
+
+        return;
+    }
+
+    if (password !== password2) {
+
+        message.textContent =
+            "Passwords do not match.";
+
+        return;
+    }
+
+    if (password.length < 6) {
+
+        message.textContent =
+            "Password must be at least 6 characters.";
+
+        return;
+    }
+
+    try {
+
+        const response = await fetch(
+            "/signup",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+                body: JSON.stringify({
+                    email: email,
+                    password: password
+                })
+            }
+        );
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+
+            message.textContent =
+                data.error ||
+                "Sign up failed.";
+
+            return;
+        }
+
+        message.className = "success";
+        message.textContent =
+            "Account created!";
+
+        setTimeout(() => {
+            window.location.href = "/";
+        }, 700);
+
+    } catch (error) {
+
+        message.textContent =
+            "Something went wrong. Please try again.";
+    }
+}
+
+</script>
+
+</body>
+</html>
