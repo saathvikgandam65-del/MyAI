@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, render_template, request, jsonify
 from huggingface_hub import InferenceClient
 import ast
 import operator
@@ -24,7 +24,8 @@ client = InferenceClient(
 # MODELS
 # =========================================================
 
-CHAT_MODEL = "Qwen/Qwen3-4B-Thinking-2507"
+# NON-THINKING CHAT MODEL
+CHAT_MODEL = "Qwen/Qwen3-4B-Instruct-2507"
 
 # Image generation
 IMAGE_MODEL = "Qwen/Qwen-Image"
@@ -32,12 +33,13 @@ IMAGE_MODEL = "Qwen/Qwen-Image"
 # Photo editing
 EDIT_MODEL = "black-forest-labs/FLUX.1-Kontext-dev"
 
-# Fast video model
+# Text → video
 VIDEO_MODEL = "Lightricks/LTX-Video-0.9.8-13B-distilled"
 
 # Image → video
 IMAGE_VIDEO_MODEL = "Wan-AI/Wan2.2-I2V-A14B"
 
+# Voice transcription
 VOICE_MODEL = "openai/whisper-large-v3"
 
 print("======================================", flush=True)
@@ -46,6 +48,8 @@ print("CHAT MODEL:", CHAT_MODEL, flush=True)
 print("IMAGE MODEL:", IMAGE_MODEL, flush=True)
 print("EDIT MODEL:", EDIT_MODEL, flush=True)
 print("VIDEO MODEL:", VIDEO_MODEL, flush=True)
+print("IMAGE VIDEO MODEL:", IMAGE_VIDEO_MODEL, flush=True)
+print("VOICE MODEL:", VOICE_MODEL, flush=True)
 print("======================================", flush=True)
 
 
@@ -105,6 +109,7 @@ def try_math(question):
     if "square root of" in text:
 
         try:
+
             number = text.split(
                 "square root of",
                 1
@@ -219,37 +224,38 @@ def clean_ai_response(answer):
 
     answer = answer.strip()
 
-    if "<think>" in answer:
+    # Remove complete thinking blocks
+    answer = re.sub(
+        r"<think>.*?</think>",
+        "",
+        answer,
+        flags=re.DOTALL | re.IGNORECASE
+    ).strip()
 
-        if "</think>" in answer:
+    # If an ending think tag exists,
+    # keep only the answer after it.
+    if "</think>" in answer:
 
-            answer = answer.split(
-                "</think>",
-                1
-            )[1].strip()
+        answer = answer.split(
+            "</think>",
+            1
+        )[1].strip()
 
-        else:
+    # Remove accidental opening tag
+    answer = answer.replace(
+        "<think>",
+        ""
+    ).strip()
 
-            answer = answer.split(
-                "<think>",
-                1
-            )[0].strip()
+    # Remove common final-answer labels
+    answer = re.sub(
+        r"^(final answer|final response|answer)\s*:\s*",
+        "",
+        answer,
+        flags=re.IGNORECASE
+    ).strip()
 
-    for marker in [
-        "Final answer:",
-        "Final Answer:"
-    ]:
-
-        if marker in answer:
-
-            answer = answer.split(
-                marker,
-                1
-            )[1].strip()
-
-            break
-
-    return answer.strip()
+    return answer
 
 
 # =========================================================
@@ -334,7 +340,10 @@ def chat():
                     "Please type a message."
             })
 
-        # Math first
+        # =================================================
+        # MATH FIRST
+        # =================================================
+
         math_answer = try_math(
             question
         )
@@ -367,7 +376,10 @@ def chat():
                 "reply": answer
             })
 
-        # Normal AI
+        # =================================================
+        # NON-THINKING QWEN
+        # =================================================
+
         response = client.chat.completions.create(
 
             model=CHAT_MODEL,
@@ -377,9 +389,12 @@ def chat():
                     "role": "system",
                     "content": (
                         "You are My AI. "
-                        "Give only the final answer. "
-                        "Be direct and concise. "
-                        "Never show reasoning."
+                        "Answer the user's question "
+                        "directly and accurately. "
+                        "Be concise and helpful. "
+                        "Do not show internal reasoning. "
+                        "Do not discuss your reasoning. "
+                        "Give the answer directly."
                     )
                 },
                 {
@@ -388,9 +403,9 @@ def chat():
                 }
             ],
 
-            temperature=0.1,
+            temperature=0.7,
 
-            max_tokens=60
+            max_tokens=120
         )
 
         answer = (
