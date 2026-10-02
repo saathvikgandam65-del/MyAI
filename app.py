@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 from huggingface_hub import InferenceClient
+from ddgs import DDGS
 import ast
 import operator
 import math
@@ -54,6 +55,109 @@ print("======================================", flush=True)
 
 
 # =========================================================
+# FREE WEB SEARCH
+# =========================================================
+
+def web_search(query, max_results=5):
+
+    try:
+
+        print(
+            "WEB SEARCH:",
+            query,
+            flush=True
+        )
+
+        results = DDGS().text(
+            query,
+            region="us-en",
+            safesearch="moderate",
+            max_results=max_results
+        )
+
+        if not results:
+            return ""
+
+        formatted = []
+
+        for result in results:
+
+            title = result.get(
+                "title",
+                ""
+            )
+
+            body = result.get(
+                "body",
+                ""
+            )
+
+            url = result.get(
+                "href",
+                ""
+            )
+
+            formatted.append(
+                f"Title: {title}\n"
+                f"Summary: {body}\n"
+                f"Source: {url}"
+            )
+
+        return "\n\n".join(
+            formatted
+        )
+
+    except Exception as e:
+
+        print(
+            "WEB SEARCH ERROR:",
+            repr(e),
+            flush=True
+        )
+
+        return ""
+
+
+# =========================================================
+# SHOULD USE WEB SEARCH?
+# =========================================================
+
+def needs_web_search(question):
+
+    text = question.lower()
+
+    search_words = [
+        "latest",
+        "today",
+        "current",
+        "recent",
+        "news",
+        "this week",
+        "this month",
+        "right now",
+        "currently",
+        "price",
+        "weather",
+        "score",
+        "scores",
+        "schedule",
+        "stock",
+        "stocks",
+        "president",
+        "election",
+        "who won",
+        "what happened",
+        "newest",
+        "2026"
+    ]
+
+    return any(
+        word in text
+        for word in search_words
+    )
+
+
+# =========================================================
 # SAFE MATH
 # =========================================================
 
@@ -69,20 +173,38 @@ def calculate(expression):
 
     def solve(node):
 
-        if isinstance(node, ast.Expression):
-            return solve(node.body)
+        if isinstance(
+            node,
+            ast.Expression
+        ):
+            return solve(
+                node.body
+            )
 
-        if isinstance(node, ast.Constant) and isinstance(
-            node.value,
-            (int, float)
+        if (
+            isinstance(
+                node,
+                ast.Constant
+            )
+            and
+            isinstance(
+                node.value,
+                (int, float)
+            )
         ):
             return node.value
 
         if (
-            isinstance(node, ast.BinOp)
-            and type(node.op) in operators
+            isinstance(
+                node,
+                ast.BinOp
+            )
+            and
+            type(node.op) in operators
         ):
-            return operators[type(node.op)](
+            return operators[
+                type(node.op)
+            ](
                 solve(node.left),
                 solve(node.right)
             )
@@ -377,8 +499,39 @@ def chat():
             })
 
         # =================================================
+        # WEB SEARCH
+        # =================================================
+
+        web_context = ""
+
+        if needs_web_search(
+            question
+        ):
+
+            web_context = web_search(
+                question,
+                max_results=5
+            )
+
+        # =================================================
         # NON-THINKING QWEN
         # =================================================
+
+        user_message = question
+
+        if web_context:
+
+            user_message = (
+                question
+                + "\n\n"
+                + "WEB SEARCH RESULTS:\n"
+                + web_context
+                + "\n\n"
+                + "Use the web results when "
+                + "they are relevant. "
+                + "Answer the user directly. "
+                + "Do not mention internal reasoning."
+            )
 
         response = client.chat.completions.create(
 
@@ -399,13 +552,13 @@ def chat():
                 },
                 {
                     "role": "user",
-                    "content": question
+                    "content": user_message
                 }
             ],
 
             temperature=0.7,
 
-            max_tokens=120
+            max_tokens=180
         )
 
         answer = (
