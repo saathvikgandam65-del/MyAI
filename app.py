@@ -22,7 +22,7 @@ client = InferenceClient(
 # AI MODEL
 # =========================================================
 
-MODEL = "Qwen/Qwen2.5-3B-Instruct"
+MODEL = "prism-ml/Ternary-Bonsai-27B-gguf"
 
 print("========== MY AI MODEL ==========", flush=True)
 print("RUNNING MODEL:", MODEL, flush=True)
