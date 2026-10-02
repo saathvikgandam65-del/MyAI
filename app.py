@@ -33,9 +33,7 @@ def web_search(query, max_results=5):
         answer = data.get("answer")
 
         if answer:
-            formatted.append(
-                f"Answer: {answer}"
-            )
+            formatted.append(f"Answer: {answer}")
 
         for result in data.get("results", []):
             title = result.get("title", "")
