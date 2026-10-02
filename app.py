@@ -1,16 +1,18 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_file
 from huggingface_hub import InferenceClient
 import ast
 import operator
 import math
 import re
 import os
+import io
+import base64
 from datetime import datetime
 
 app = Flask(__name__)
 
 # =========================================================
-# HUGGING FACE CONNECTION
+# HUGGING FACE
 # =========================================================
 
 client = InferenceClient(
@@ -19,17 +21,32 @@ client = InferenceClient(
 )
 
 # =========================================================
-# AI MODEL
+# MODELS
 # =========================================================
 
-MODEL = "Qwen/Qwen3-4B-Thinking-2507"
+CHAT_MODEL = "Qwen/Qwen3-4B-Thinking-2507"
 
-print("========== MY AI MODEL ==========", flush=True)
-print("RUNNING MODEL:", MODEL, flush=True)
-print("=================================", flush=True)
+# Image generation
+IMAGE_MODEL = "Qwen/Qwen-Image"
 
-# Voice model
+# Photo editing
+EDIT_MODEL = "black-forest-labs/FLUX.1-Kontext-dev"
+
+# Fast video model
+VIDEO_MODEL = "Lightricks/LTX-Video-0.9.8-13B-distilled"
+
+# Image → video
+IMAGE_VIDEO_MODEL = "Wan-AI/Wan2.2-I2V-A14B"
+
 VOICE_MODEL = "openai/whisper-large-v3"
+
+print("======================================", flush=True)
+print("             MY AI STARTED            ", flush=True)
+print("CHAT MODEL:", CHAT_MODEL, flush=True)
+print("IMAGE MODEL:", IMAGE_MODEL, flush=True)
+print("EDIT MODEL:", EDIT_MODEL, flush=True)
+print("VIDEO MODEL:", VIDEO_MODEL, flush=True)
+print("======================================", flush=True)
 
 
 # =========================================================
@@ -88,7 +105,6 @@ def try_math(question):
     if "square root of" in text:
 
         try:
-
             number = text.split(
                 "square root of",
                 1
@@ -104,7 +120,6 @@ def try_math(question):
             )
 
         except:
-
             return None
 
     # Percent
@@ -131,7 +146,6 @@ def try_math(question):
             ) * number
 
         except:
-
             return None
 
     # Normal math
@@ -195,28 +209,65 @@ def try_math(question):
 
 
 # =========================================================
-# LOG CHAT
+# CLEAN CHAT RESPONSE
+# =========================================================
+
+def clean_ai_response(answer):
+
+    if not answer:
+        return ""
+
+    answer = answer.strip()
+
+    if "<think>" in answer:
+
+        if "</think>" in answer:
+
+            answer = answer.split(
+                "</think>",
+                1
+            )[1].strip()
+
+        else:
+
+            answer = answer.split(
+                "<think>",
+                1
+            )[0].strip()
+
+    for marker in [
+        "Final answer:",
+        "Final Answer:"
+    ]:
+
+        if marker in answer:
+
+            answer = answer.split(
+                marker,
+                1
+            )[1].strip()
+
+            break
+
+    return answer.strip()
+
+
+# =========================================================
+# LOG
 # =========================================================
 
 def log_chat(question, answer):
 
-    timestamp = datetime.now().strftime(
-        "%Y-%m-%d %H:%M:%S"
-    )
-
     print(
-        "",
-        flush=True
-    )
-
-    print(
-        "========== MY AI CHAT ==========",
+        "========== MY AI ==========",
         flush=True
     )
 
     print(
         "TIME:",
-        timestamp,
+        datetime.now().strftime(
+            "%Y-%m-%d %H:%M:%S"
+        ),
         flush=True
     )
 
@@ -227,24 +278,19 @@ def log_chat(question, answer):
     )
 
     print(
-        "MY AI:",
+        "AI:",
         answer,
         flush=True
     )
 
     print(
-        "================================",
-        flush=True
-    )
-
-    print(
-        "",
+        "===========================",
         flush=True
     )
 
 
 # =========================================================
-# HOME PAGE
+# HOME
 # =========================================================
 
 @app.route("/")
@@ -256,7 +302,7 @@ def home():
 
 
 # =========================================================
-# CHAT
+# NORMAL CHAT
 # =========================================================
 
 @app.route(
@@ -288,10 +334,7 @@ def chat():
                     "Please type a message."
             })
 
-        # =================================================
-        # TRY MATH FIRST
-        # =================================================
-
+        # Math first
         math_answer = try_math(
             question
         )
@@ -312,8 +355,7 @@ def chat():
                 )
 
             answer = (
-                f"Answer: "
-                f"{math_answer}"
+                f"Answer: {math_answer}"
             )
 
             log_chat(
@@ -325,42 +367,30 @@ def chat():
                 "reply": answer
             })
 
-        # =================================================
-        # AI
-        # =================================================
-
+        # Normal AI
         response = client.chat.completions.create(
 
-            model=MODEL,
+            model=CHAT_MODEL,
 
             messages=[
-
                 {
                     "role": "system",
-
                     "content": (
                         "You are My AI. "
-                        "Answer directly, "
-                        "clearly, and briefly. "
-                        "Help with math, "
-                        "school subjects, "
-                        "coding, science, "
-                        "history, and general "
-                        "questions."
+                        "Give only the final answer. "
+                        "Be direct and concise. "
+                        "Never show reasoning."
                     )
                 },
-
                 {
                     "role": "user",
-
                     "content": question
                 }
-
             ],
 
-            temperature=0.2,
+            temperature=0.1,
 
-            max_tokens=120
+            max_tokens=60
         )
 
         answer = (
@@ -370,11 +400,14 @@ def chat():
             .content
         )
 
+        answer = clean_ai_response(
+            answer
+        )
+
         if not answer:
 
             answer = (
-                "I couldn't generate "
-                "an answer."
+                "I couldn't generate an answer."
             )
 
         log_chat(
@@ -389,30 +422,347 @@ def chat():
     except Exception as e:
 
         print(
-            "========== AI ERROR ==========",
-            flush=True
-        )
-
-        print(
-            "ERROR:",
+            "CHAT ERROR:",
             repr(e),
-            flush=True
-        )
-
-        print(
-            "MODEL:",
-            MODEL,
-            flush=True
-        )
-
-        print(
-            "==============================",
             flush=True
         )
 
         return jsonify({
             "reply":
                 "AI error. Please try again."
+        }), 500
+
+
+# =========================================================
+# GENERATE IMAGE
+# =========================================================
+
+@app.route(
+    "/generate-image",
+    methods=["POST"]
+)
+def generate_image():
+
+    try:
+
+        data = request.get_json()
+
+        prompt = data.get(
+            "prompt",
+            ""
+        ).strip()
+
+        if not prompt:
+
+            return jsonify({
+                "error":
+                    "Please describe the image."
+            }), 400
+
+        print(
+            "GENERATING IMAGE:",
+            prompt,
+            flush=True
+        )
+
+        image = client.text_to_image(
+
+            prompt=prompt,
+
+            model=IMAGE_MODEL,
+
+            width=1024,
+
+            height=1024,
+
+            num_inference_steps=20
+        )
+
+        buffer = io.BytesIO()
+
+        image.save(
+            buffer,
+            format="PNG"
+        )
+
+        buffer.seek(0)
+
+        image_base64 = base64.b64encode(
+            buffer.read()
+        ).decode("utf-8")
+
+        return jsonify({
+            "success": True,
+            "type": "image",
+            "image":
+                "data:image/png;base64,"
+                + image_base64
+        })
+
+    except Exception as e:
+
+        print(
+            "IMAGE ERROR:",
+            repr(e),
+            flush=True
+        )
+
+        return jsonify({
+            "error":
+                "Image generation failed. "
+                "Please try again."
+        }), 500
+
+
+# =========================================================
+# EDIT UPLOADED PHOTO
+# =========================================================
+
+@app.route(
+    "/edit-image",
+    methods=["POST"]
+)
+def edit_image():
+
+    try:
+
+        if "image" not in request.files:
+
+            return jsonify({
+                "error":
+                    "Please upload a photo."
+            }), 400
+
+        image_file = request.files[
+            "image"
+        ]
+
+        prompt = request.form.get(
+            "prompt",
+            ""
+        ).strip()
+
+        if not prompt:
+
+            return jsonify({
+                "error":
+                    "Tell me what you want changed."
+            }), 400
+
+        image_bytes = image_file.read()
+
+        if not image_bytes:
+
+            return jsonify({
+                "error":
+                    "The uploaded photo is empty."
+            }), 400
+
+        print(
+            "EDITING PHOTO:",
+            prompt,
+            flush=True
+        )
+
+        edited = client.image_to_image(
+
+            image_bytes,
+
+            prompt=prompt,
+
+            model=EDIT_MODEL
+        )
+
+        buffer = io.BytesIO()
+
+        edited.save(
+            buffer,
+            format="PNG"
+        )
+
+        buffer.seek(0)
+
+        image_base64 = base64.b64encode(
+            buffer.read()
+        ).decode("utf-8")
+
+        return jsonify({
+            "success": True,
+            "type": "edited_image",
+            "image":
+                "data:image/png;base64,"
+                + image_base64
+        })
+
+    except Exception as e:
+
+        print(
+            "PHOTO EDIT ERROR:",
+            repr(e),
+            flush=True
+        )
+
+        return jsonify({
+            "error":
+                "Photo editing failed. "
+                "Please try again."
+        }), 500
+
+
+# =========================================================
+# GENERATE VIDEO FROM TEXT
+# =========================================================
+
+@app.route(
+    "/generate-video",
+    methods=["POST"]
+)
+def generate_video():
+
+    try:
+
+        data = request.get_json()
+
+        prompt = data.get(
+            "prompt",
+            ""
+        ).strip()
+
+        if not prompt:
+
+            return jsonify({
+                "error":
+                    "Please describe the video."
+            }), 400
+
+        print(
+            "GENERATING VIDEO:",
+            prompt,
+            flush=True
+        )
+
+        video = client.text_to_video(
+
+            prompt,
+
+            model=VIDEO_MODEL,
+
+            num_inference_steps=20
+        )
+
+        video_base64 = base64.b64encode(
+            video
+        ).decode("utf-8")
+
+        return jsonify({
+            "success": True,
+            "type": "video",
+            "video":
+                "data:video/mp4;base64,"
+                + video_base64
+        })
+
+    except Exception as e:
+
+        print(
+            "VIDEO ERROR:",
+            repr(e),
+            flush=True
+        )
+
+        return jsonify({
+            "error":
+                "Video generation failed. "
+                "The video provider may be unavailable "
+                "or the request may require paid credits."
+        }), 500
+
+
+# =========================================================
+# IMAGE → VIDEO
+# =========================================================
+
+@app.route(
+    "/image-to-video",
+    methods=["POST"]
+)
+def image_to_video():
+
+    try:
+
+        if "image" not in request.files:
+
+            return jsonify({
+                "error":
+                    "Please upload an image."
+            }), 400
+
+        image_file = request.files[
+            "image"
+        ]
+
+        prompt = request.form.get(
+            "prompt",
+            ""
+        ).strip()
+
+        image_bytes = image_file.read()
+
+        if not image_bytes:
+
+            return jsonify({
+                "error":
+                    "The image is empty."
+            }), 400
+
+        if not prompt:
+
+            prompt = (
+                "Create a natural cinematic "
+                "animation from this image."
+            )
+
+        print(
+            "IMAGE TO VIDEO:",
+            prompt,
+            flush=True
+        )
+
+        video = client.image_to_video(
+
+            image_bytes,
+
+            model=IMAGE_VIDEO_MODEL,
+
+            prompt=prompt,
+
+            num_inference_steps=20
+        )
+
+        video_base64 = base64.b64encode(
+            video
+        ).decode("utf-8")
+
+        return jsonify({
+            "success": True,
+            "type": "image_to_video",
+            "video":
+                "data:video/mp4;base64,"
+                + video_base64
+        })
+
+    except Exception as e:
+
+        print(
+            "IMAGE TO VIDEO ERROR:",
+            repr(e),
+            flush=True
+        )
+
+        return jsonify({
+            "error":
+                "Image-to-video failed. "
+                "The video provider may be unavailable."
         }), 500
 
 
@@ -426,37 +776,33 @@ def chat():
 )
 def transcribe():
 
-    if "audio" not in request.files:
-
-        return jsonify({
-            "error":
-                "No audio received."
-        }), 400
-
-    audio_file = request.files[
-        "audio"
-    ]
-
     try:
 
-        audio_bytes = (
-            audio_file.read()
-        )
+        if "audio" not in request.files:
+
+            return jsonify({
+                "error":
+                    "No audio received."
+            }), 400
+
+        audio_file = request.files[
+            "audio"
+        ]
+
+        audio_bytes = audio_file.read()
 
         if not audio_bytes:
 
             return jsonify({
                 "error":
-                    "The audio recording "
-                    "was empty."
+                    "The recording was empty."
             }), 400
 
-        result = (
-            client
-            .automatic_speech_recognition(
-                audio_bytes,
-                model=VOICE_MODEL
-            )
+        result = client.automatic_speech_recognition(
+
+            audio_bytes,
+
+            model=VOICE_MODEL
         )
 
         text = result.text.strip()
@@ -465,8 +811,7 @@ def transcribe():
 
             return jsonify({
                 "error":
-                    "I couldn't understand "
-                    "the recording."
+                    "I couldn't understand the recording."
             }), 400
 
         return jsonify({
@@ -476,18 +821,8 @@ def transcribe():
     except Exception as e:
 
         print(
-            "========== VOICE ERROR ==========",
-            flush=True
-        )
-
-        print(
-            "ERROR:",
+            "VOICE ERROR:",
             repr(e),
-            flush=True
-        )
-
-        print(
-            "=================================",
             flush=True
         )
 
