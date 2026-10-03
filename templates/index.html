@@ -7,6 +7,7 @@
 <title>My AI</title>
 
 <style>
+
 * {
     box-sizing: border-box;
 }
@@ -14,62 +15,119 @@
 body {
     margin: 0;
     font-family: Arial, sans-serif;
-    background: #0b0d12;
+    background: #0b0f17;
     color: white;
     height: 100vh;
     overflow: hidden;
 }
+
+/* =========================
+   LAYOUT
+========================= */
 
 .app {
     display: flex;
     height: 100vh;
 }
 
+/* =========================
+   SIDEBAR
+========================= */
+
 .sidebar {
-    width: 250px;
-    background: #11141b;
-    border-right: 1px solid #252936;
-    padding: 20px;
+    width: 270px;
+    background: #111722;
+    border-right: 1px solid #252d3a;
     display: flex;
     flex-direction: column;
+    padding: 16px;
 }
 
 .logo {
     font-size: 24px;
     font-weight: bold;
-    margin-bottom: 25px;
+    margin-bottom: 18px;
 }
 
 .new-chat {
     width: 100%;
-    padding: 12px;
-    border: 0;
+    padding: 13px;
+    border: none;
     border-radius: 10px;
-    background: #ffffff;
-    color: #111;
+    background: #6878ff;
+    color: white;
     font-weight: bold;
     cursor: pointer;
-    margin-bottom: 15px;
+    margin-bottom: 18px;
 }
 
 .new-chat:hover {
-    opacity: 0.85;
+    background: #5666ed;
 }
 
-.sidebar-button {
-    background: #191d26;
-    border: 1px solid #292e3a;
-    color: white;
-    padding: 11px;
-    border-radius: 9px;
+.history-title {
+    color: #8993a5;
+    font-size: 13px;
     margin-bottom: 8px;
-    cursor: pointer;
-    text-align: left;
 }
 
-.sidebar-button:hover {
-    background: #242936;
+.chat-history {
+    flex: 1;
+    overflow-y: auto;
 }
+
+.chat-item {
+    padding: 11px;
+    margin-bottom: 5px;
+    border-radius: 9px;
+    cursor: pointer;
+    color: #dce1eb;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chat-item:hover {
+    background: #1c2432;
+}
+
+.chat-item.active {
+    background: #202a3c;
+}
+
+.account {
+    border-top: 1px solid #252d3a;
+    padding-top: 14px;
+    margin-top: 10px;
+}
+
+.account-email {
+    font-size: 12px;
+    color: #8993a5;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-bottom: 9px;
+}
+
+.logout {
+    width: 100%;
+    padding: 9px;
+    border: 1px solid #353e4e;
+    border-radius: 8px;
+    background: transparent;
+    color: #ddd;
+    cursor: pointer;
+}
+
+.logout:hover {
+    background: #1d2532;
+}
+
+/* =========================
+   MAIN
+========================= */
 
 .main {
     flex: 1;
@@ -79,12 +137,11 @@ body {
 }
 
 .topbar {
-    height: 65px;
-    border-bottom: 1px solid #252936;
+    height: 60px;
+    border-bottom: 1px solid #252d3a;
     display: flex;
     align-items: center;
     padding: 0 20px;
-    font-size: 18px;
     font-weight: bold;
 }
 
@@ -106,189 +163,165 @@ body {
 }
 
 .welcome p {
-    color: #9ba1ae;
-    font-size: 16px;
+    color: #8e98aa;
 }
+
+/* =========================
+   MESSAGES
+========================= */
 
 .message {
     max-width: 850px;
-    margin: 0 auto 20px;
-    padding: 15px 18px;
-    border-radius: 14px;
-    line-height: 1.5;
+    margin: 0 auto 18px auto;
+    display: flex;
+}
+
+.message.user {
+    justify-content: flex-end;
+}
+
+.message-content {
+    padding: 12px 15px;
+    border-radius: 15px;
     white-space: pre-wrap;
+    line-height: 1.5;
+    max-width: 80%;
 }
 
-.user-message {
-    background: #1b202b;
+.message.user .message-content {
+    background: #6878ff;
 }
 
-.ai-message {
-    background: #12161e;
-    border: 1px solid #242936;
+.message.assistant .message-content {
+    background: #171e2a;
+    border: 1px solid #283142;
 }
 
-.media-message img {
-    max-width: 100%;
-    border-radius: 14px;
-    margin-top: 10px;
-}
-
-.media-message video {
-    max-width: 100%;
-    border-radius: 14px;
-    margin-top: 10px;
-}
+/* =========================
+   MODES
+========================= */
 
 .modes {
-    max-width: 900px;
-    width: calc(100% - 30px);
-    margin: 0 auto 10px;
     display: flex;
-    gap: 7px;
+    gap: 8px;
+    padding: 10px 20px;
     overflow-x: auto;
+    border-top: 1px solid #252d3a;
 }
 
-.mode {
-    border: 1px solid #303542;
-    background: #151922;
-    color: #ddd;
-    padding: 9px 12px;
-    border-radius: 20px;
+.mode-button {
+    border: 1px solid #30394a;
+    background: #121925;
+    color: #cbd2df;
+    padding: 8px 12px;
+    border-radius: 9px;
     cursor: pointer;
     white-space: nowrap;
 }
 
-.mode:hover {
-    background: #252a35;
+.mode-button.active {
+    background: #6878ff;
+    color: white;
+    border-color: #6878ff;
 }
 
-.mode.active {
-    background: white;
-    color: black;
-}
+/* =========================
+   INPUT
+========================= */
 
 .input-area {
-    padding: 12px 15px 18px;
+    padding: 14px 20px 20px;
 }
 
 .input-box {
     max-width: 900px;
     margin: auto;
-    background: #151922;
-    border: 1px solid #303542;
-    border-radius: 16px;
-    padding: 8px;
     display: flex;
-    align-items: center;
-    gap: 7px;
+    gap: 8px;
+    background: #121925;
+    border: 1px solid #30394a;
+    border-radius: 15px;
+    padding: 8px;
 }
 
 #messageInput {
     flex: 1;
+    border: none;
+    outline: none;
     background: transparent;
     color: white;
-    border: 0;
-    outline: none;
-    font-size: 16px;
     padding: 10px;
-    min-width: 0;
+    font-size: 15px;
 }
 
-.icon-button {
+#messageInput::placeholder {
+    color: #778194;
+}
+
+.input-button {
     width: 42px;
     height: 42px;
-    border: 0;
-    border-radius: 11px;
-    background: #242936;
+    border: none;
+    border-radius: 10px;
+    background: #202a3a;
     color: white;
     cursor: pointer;
-    font-size: 18px;
 }
 
-.icon-button:hover {
-    background: #333947;
+.input-button:hover {
+    background: #2b374a;
 }
 
 .send-button {
-    background: white;
-    color: black;
-    font-weight: bold;
+    background: #6878ff;
 }
 
-#fileInput {
-    display: none;
+.send-button:hover {
+    background: #5666ed;
 }
 
-.file-name {
+/* =========================
+   FILE
+========================= */
+
+.file-area {
     max-width: 900px;
-    margin: 5px auto;
-    color: #9ba1ae;
-    font-size: 13px;
+    margin: 0 auto 8px auto;
 }
+
+.file-area input {
+    color: #9da6b8;
+}
+
+/* =========================
+   LOADING
+========================= */
 
 .loading {
-    display: inline-flex;
-    gap: 5px;
+    max-width: 850px;
+    margin: 0 auto 18px auto;
+    color: #8993a5;
 }
 
-.loading span {
-    width: 7px;
-    height: 7px;
-    background: #aaa;
-    border-radius: 50%;
-    animation: bounce 1s infinite;
-}
-
-.loading span:nth-child(2) {
-    animation-delay: .15s;
-}
-
-.loading span:nth-child(3) {
-    animation-delay: .3s;
-}
-
-@keyframes bounce {
-    0%, 100% {
-        transform: translateY(0);
-    }
-
-    50% {
-        transform: translateY(-5px);
-    }
-}
+/* =========================
+   MOBILE
+========================= */
 
 @media (max-width: 700px) {
 
     .sidebar {
-        display: none;
-    }
-
-    .welcome {
-        margin: 30px auto;
+        width: 220px;
     }
 
     .welcome h1 {
         font-size: 30px;
     }
 
-    .messages {
-        padding: 15px;
-    }
-
-    .message {
-        font-size: 15px;
-    }
-
-    .mode {
-        font-size: 13px;
-        padding: 8px 10px;
-    }
-
-    .input-box {
-        border-radius: 14px;
+    .message-content {
+        max-width: 90%;
     }
 }
+
 </style>
 </head>
 
@@ -296,117 +329,146 @@ body {
 
 <div class="app">
 
+    <!-- =========================
+         SIDEBAR
+    ========================= -->
+
     <aside class="sidebar">
 
         <div class="logo">
             🤖 My AI
         </div>
 
-        <button class="new-chat" onclick="newChat()">
+        <button
+            class="new-chat"
+            onclick="newChat()"
+        >
             ＋ New Chat
         </button>
 
-        <button class="sidebar-button" onclick="selectMode('chat')">
-            💬 Chat
-        </button>
+        <div class="history-title">
+            Your Chats
+        </div>
 
-        <button class="sidebar-button" onclick="selectMode('image')">
-            🖼️ Generate Image
-        </button>
+        <div
+            id="chatHistory"
+            class="chat-history"
+        ></div>
 
-        <button class="sidebar-button" onclick="selectMode('edit')">
-            📷 Edit Photo
-        </button>
+        <div class="account">
 
-        <button class="sidebar-button" onclick="selectMode('video')">
-            🎬 Generate Video
-        </button>
+            <div
+                id="accountEmail"
+                class="account-email"
+            >
+                Loading...
+            </div>
 
-        <button class="sidebar-button" onclick="selectMode('image-video')">
-            🖼️➡️🎬 Image → Video
-        </button>
+            <button
+                class="logout"
+                onclick="logout()"
+            >
+                Log Out
+            </button>
+
+        </div>
 
     </aside>
+
+
+    <!-- =========================
+         MAIN
+    ========================= -->
 
     <main class="main">
 
         <div class="topbar">
-            🤖 My AI
+            My AI
         </div>
 
-        <section class="messages" id="messages">
+        <section
+            id="messages"
+            class="messages"
+        >
 
-            <div class="welcome" id="welcome">
+            <div
+                id="welcome"
+                class="welcome"
+            >
 
-                <h1>What can I help you create?</h1>
+                <h1>
+                    How can I help?
+                </h1>
 
                 <p>
-                    Chat, create images, edit photos,
-                    generate videos, and more.
+                    Ask me anything.
                 </p>
 
             </div>
 
         </section>
 
+
+        <!-- MODES -->
+
         <div class="modes">
 
             <button
-                class="mode active"
-                id="chatMode"
-                onclick="selectMode('chat')">
+                class="mode-button active"
+                onclick="selectMode('chat', this)"
+            >
                 💬 Chat
             </button>
 
             <button
-                class="mode"
-                id="imageMode"
-                onclick="selectMode('image')">
-                🖼️ Image
+                class="mode-button"
+                onclick="selectMode('image', this)"
+            >
+                🎨 Generate Image
             </button>
 
             <button
-                class="mode"
-                id="editMode"
-                onclick="selectMode('edit')">
-                📷 Edit Photo
+                class="mode-button"
+                onclick="selectMode('edit', this)"
+            >
+                🖼️ Edit Photo
             </button>
 
             <button
-                class="mode"
-                id="videoMode"
-                onclick="selectMode('video')">
-                🎬 Video
+                class="mode-button"
+                onclick="selectMode('video', this)"
+            >
+                🎬 Generate Video
             </button>
 
             <button
-                class="mode"
-                id="imageVideoMode"
-                onclick="selectMode('image-video')">
-                🖼️➡️🎬
+                class="mode-button"
+                onclick="selectMode('image-video', this)"
+            >
+                🎞️ Image → Video
             </button>
 
         </div>
 
-        <div class="file-name" id="fileName"></div>
+
+        <!-- FILE -->
+
+        <div class="file-area">
+
+            <input
+                id="fileInput"
+                type="file"
+                onchange="fileSelected()"
+            >
+
+        </div>
+
+
+        <!-- INPUT -->
 
         <div class="input-area">
 
             <div class="input-box">
-
-                <input
-                    type="file"
-                    id="fileInput"
-                    accept="image/*"
-                    onchange="fileSelected()"
-                >
-
-                <button
-                    class="icon-button"
-                    title="Upload photo"
-                    onclick="document.getElementById('fileInput').click()">
-                    📎
-                </button>
 
                 <input
                     id="messageInput"
@@ -416,16 +478,18 @@ body {
                 >
 
                 <button
-                    class="icon-button"
-                    id="voiceButton"
+                    class="input-button"
+                    onclick="startVoice()"
                     title="Voice"
-                    onclick="startVoice()">
+                >
                     🎤
                 </button>
 
                 <button
-                    class="icon-button send-button"
-                    onclick="sendMessage()">
+                    class="input-button send-button"
+                    onclick="sendMessage()"
+                    title="Send"
+                >
                     ➤
                 </button>
 
@@ -437,90 +501,203 @@ body {
 
 </div>
 
+
 <script>
 
 let currentMode = "chat";
-let selectedFile = null;
-let currentRecorder = null;
+let currentConversationId = null;
 
 
 /* =========================
-   MODE
+   LOAD USER
 ========================= */
 
-function selectMode(mode) {
+async function loadUser() {
 
-    currentMode = mode;
+    try {
 
-    document.querySelectorAll(".mode")
-        .forEach(button => {
-            button.classList.remove("active");
-        });
+        const response = await fetch(
+            "/api/me"
+        );
 
-    if (mode === "chat") {
-        document.getElementById("chatMode")
-            .classList.add("active");
+        const data =
+            await response.json();
 
-        document.getElementById("messageInput")
-            .placeholder = "Message My AI...";
-    }
+        if (!data.logged_in) {
 
-    if (mode === "image") {
-        document.getElementById("imageMode")
-            .classList.add("active");
+            window.location.href = "/";
+            return;
+        }
 
-        document.getElementById("messageInput")
-            .placeholder =
-                "Describe the image you want...";
-    }
+        document.getElementById(
+            "accountEmail"
+        ).textContent = data.email;
 
-    if (mode === "edit") {
-        document.getElementById("editMode")
-            .classList.add("active");
+    } catch (error) {
 
-        document.getElementById("messageInput")
-            .placeholder =
-                "Tell me how to edit the photo...";
-    }
-
-    if (mode === "video") {
-        document.getElementById("videoMode")
-            .classList.add("active");
-
-        document.getElementById("messageInput")
-            .placeholder =
-                "Describe the video you want...";
-    }
-
-    if (mode === "image-video") {
-        document.getElementById("imageVideoMode")
-            .classList.add("active");
-
-        document.getElementById("messageInput")
-            .placeholder =
-                "Describe how the image should move...";
+        console.error(
+            "User loading error:",
+            error
+        );
     }
 }
 
 
 /* =========================
-   FILE
+   LOAD CHAT LIST
 ========================= */
 
-function fileSelected() {
+async function loadChatHistory() {
 
-    const input =
-        document.getElementById("fileInput");
+    try {
 
-    if (!input.files.length) {
-        return;
+        const response = await fetch(
+            "/api/conversations"
+        );
+
+        if (!response.ok) {
+            return;
+        }
+
+        const data =
+            await response.json();
+
+        const container =
+            document.getElementById(
+                "chatHistory"
+            );
+
+        container.innerHTML = "";
+
+        data.conversations.forEach(
+            conversation => {
+
+                const item =
+                    document.createElement(
+                        "div"
+                    );
+
+                item.className =
+                    "chat-item";
+
+                if (
+                    conversation.id ===
+                    currentConversationId
+                ) {
+                    item.classList.add(
+                        "active"
+                    );
+                }
+
+                item.textContent =
+                    conversation.title ||
+                    "New Chat";
+
+                item.onclick = () => {
+
+                    loadConversation(
+                        conversation.id
+                    );
+
+                };
+
+                container.appendChild(item);
+            }
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Chat history error:",
+            error
+        );
     }
+}
 
-    selectedFile = input.files[0];
 
-    document.getElementById("fileName")
-        .textContent =
-            "📎 " + selectedFile.name;
+/* =========================
+   LOAD CONVERSATION
+========================= */
+
+async function loadConversation(
+    conversationId
+) {
+
+    try {
+
+        const response = await fetch(
+            `/api/conversations/${conversationId}`
+        );
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+
+            alert(
+                data.error ||
+                "Could not load chat."
+            );
+
+            return;
+        }
+
+        currentConversationId =
+            conversationId;
+
+        const messages =
+            document.getElementById(
+                "messages"
+            );
+
+        messages.innerHTML = "";
+
+        data.messages.forEach(
+            message => {
+
+                addMessage(
+                    message.content,
+                    message.role
+                );
+
+            }
+        );
+
+        if (
+            data.messages.length === 0
+        ) {
+            showWelcome();
+        }
+
+        await loadChatHistory();
+
+    } catch (error) {
+
+        console.error(
+            "Conversation loading error:",
+            error
+        );
+    }
+}
+
+
+/* =========================
+   WELCOME
+========================= */
+
+function showWelcome() {
+
+    const messages =
+        document.getElementById(
+            "messages"
+        );
+
+    messages.innerHTML = `
+        <div id="welcome" class="welcome">
+            <h1>How can I help?</h1>
+            <p>Ask me anything.</p>
+        </div>
+    `;
 }
 
 
@@ -528,120 +705,46 @@ function fileSelected() {
    ADD MESSAGE
 ========================= */
 
-function addMessage(text, type = "ai") {
+function addMessage(
+    text,
+    role = "assistant"
+) {
 
     const welcome =
-        document.getElementById("welcome");
+        document.getElementById(
+            "welcome"
+        );
 
     if (welcome) {
         welcome.remove();
     }
 
     const messages =
-        document.getElementById("messages");
+        document.getElementById(
+            "messages"
+        );
 
-    const div =
-        document.createElement("div");
+    const wrapper =
+        document.createElement(
+            "div"
+        );
 
-    div.className =
-        "message " +
-        (type === "user"
-            ? "user-message"
-            : "ai-message");
+    wrapper.className =
+        `message ${role}`;
 
-    div.textContent = text;
+    const content =
+        document.createElement(
+            "div"
+        );
 
-    messages.appendChild(div);
+    content.className =
+        "message-content";
 
-    messages.scrollTop =
-        messages.scrollHeight;
-}
+    content.textContent = text;
 
+    wrapper.appendChild(content);
 
-/* =========================
-   ADD IMAGE
-========================= */
-
-function addImage(image, label = "Generated image") {
-
-    const welcome =
-        document.getElementById("welcome");
-
-    if (welcome) {
-        welcome.remove();
-    }
-
-    const messages =
-        document.getElementById("messages");
-
-    const div =
-        document.createElement("div");
-
-    div.className =
-        "message ai-message media-message";
-
-    const title =
-        document.createElement("div");
-
-    title.textContent = "🖼️ " + label;
-
-    div.appendChild(title);
-
-    const img =
-        document.createElement("img");
-
-    img.src = image;
-    img.alt = label;
-
-    div.appendChild(img);
-
-    messages.appendChild(div);
-
-    messages.scrollTop =
-        messages.scrollHeight;
-}
-
-
-/* =========================
-   ADD VIDEO
-========================= */
-
-function addVideo(video, label = "Generated video") {
-
-    const welcome =
-        document.getElementById("welcome");
-
-    if (welcome) {
-        welcome.remove();
-    }
-
-    const messages =
-        document.getElementById("messages");
-
-    const div =
-        document.createElement("div");
-
-    div.className =
-        "message ai-message media-message";
-
-    const title =
-        document.createElement("div");
-
-    title.textContent = "🎬 " + label;
-
-    div.appendChild(title);
-
-    const videoElement =
-        document.createElement("video");
-
-    videoElement.src = video;
-    videoElement.controls = true;
-    videoElement.autoplay = false;
-    videoElement.playsInline = true;
-
-    div.appendChild(videoElement);
-
-    messages.appendChild(div);
+    messages.appendChild(wrapper);
 
     messages.scrollTop =
         messages.scrollHeight;
@@ -654,31 +757,26 @@ function addVideo(video, label = "Generated video") {
 
 function showLoading() {
 
-    const welcome =
-        document.getElementById("welcome");
-
-    if (welcome) {
-        welcome.remove();
-    }
-
     const messages =
-        document.getElementById("messages");
+        document.getElementById(
+            "messages"
+        );
 
-    const div =
-        document.createElement("div");
+    const loading =
+        document.createElement(
+            "div"
+        );
 
-    div.id = "loadingMessage";
-    div.className = "message ai-message";
+    loading.id =
+        "loading";
 
-    div.innerHTML = `
-        <div class="loading">
-            <span></span>
-            <span></span>
-            <span></span>
-        </div>
-    `;
+    loading.className =
+        "loading";
 
-    messages.appendChild(div);
+    loading.textContent =
+        "My AI is thinking...";
+
+    messages.appendChild(loading);
 
     messages.scrollTop =
         messages.scrollHeight;
@@ -689,7 +787,7 @@ function removeLoading() {
 
     const loading =
         document.getElementById(
-            "loadingMessage"
+            "loading"
         );
 
     if (loading) {
@@ -712,23 +810,20 @@ async function sendMessage() {
     const text =
         input.value.trim();
 
-    if (!text && !selectedFile) {
+    if (!text) {
         return;
-    }
-
-    if (text) {
-        addMessage(text, "user");
     }
 
     input.value = "";
 
+    addMessage(
+        text,
+        "user"
+    );
+
     showLoading();
 
     try {
-
-        /* =========================
-           CHAT
-        ========================= */
 
         if (currentMode === "chat") {
 
@@ -737,15 +832,14 @@ async function sendMessage() {
                     "/chat",
                     {
                         method: "POST",
-
                         headers: {
                             "Content-Type":
                                 "application/json"
                         },
-
-                        body: JSON.stringify({
-                            message: text
-                        })
+                        body:
+                            JSON.stringify({
+                                message: text
+                            })
                     }
                 );
 
@@ -754,26 +848,27 @@ async function sendMessage() {
 
             removeLoading();
 
-            /*
-             * IMPORTANT FIX:
-             * Backend returns:
-             * {"response":"425"}
-             */
+            if (response.status === 401) {
+
+                window.location.href = "/";
+                return;
+            }
 
             addMessage(
                 data.response ||
                 data.reply ||
                 data.error ||
-                "Something went wrong."
+                "Something went wrong.",
+                "assistant"
             );
+
+            await loadChatHistory();
 
             return;
         }
 
 
-        /* =========================
-           IMAGE
-        ========================= */
+        /* IMAGE */
 
         if (currentMode === "image") {
 
@@ -782,15 +877,14 @@ async function sendMessage() {
                     "/generate-image",
                     {
                         method: "POST",
-
                         headers: {
                             "Content-Type":
                                 "application/json"
                         },
-
-                        body: JSON.stringify({
-                            prompt: text
-                        })
+                        body:
+                            JSON.stringify({
+                                prompt: text
+                            })
                     }
                 );
 
@@ -799,18 +893,24 @@ async function sendMessage() {
 
             removeLoading();
 
-            if (data.image) {
+            if (data.error) {
+
+                addMessage(
+                    data.error,
+                    "assistant"
+                );
+
+            } else if (data.image) {
 
                 addImage(
-                    data.image,
-                    "Generated image"
+                    data.image
                 );
 
             } else {
 
                 addMessage(
-                    data.error ||
-                    "Image generation failed."
+                    "Image generation is not available yet.",
+                    "assistant"
                 );
             }
 
@@ -818,18 +918,22 @@ async function sendMessage() {
         }
 
 
-        /* =========================
-           EDIT PHOTO
-        ========================= */
+        /* EDIT */
 
         if (currentMode === "edit") {
 
-            if (!selectedFile) {
+            const file =
+                document.getElementById(
+                    "fileInput"
+                ).files[0];
+
+            if (!file) {
 
                 removeLoading();
 
                 addMessage(
-                    "📷 Please upload a photo first."
+                    "Please choose a photo first.",
+                    "assistant"
                 );
 
                 return;
@@ -840,7 +944,7 @@ async function sendMessage() {
 
             formData.append(
                 "image",
-                selectedFile
+                file
             );
 
             formData.append(
@@ -865,15 +969,15 @@ async function sendMessage() {
             if (data.image) {
 
                 addImage(
-                    data.image,
-                    "Edited photo"
+                    data.image
                 );
 
             } else {
 
                 addMessage(
                     data.error ||
-                    "Photo editing failed."
+                    "Photo editing is not available yet.",
+                    "assistant"
                 );
             }
 
@@ -881,9 +985,7 @@ async function sendMessage() {
         }
 
 
-        /* =========================
-           VIDEO
-        ========================= */
+        /* VIDEO */
 
         if (currentMode === "video") {
 
@@ -892,15 +994,14 @@ async function sendMessage() {
                     "/generate-video",
                     {
                         method: "POST",
-
                         headers: {
                             "Content-Type":
                                 "application/json"
                         },
-
-                        body: JSON.stringify({
-                            prompt: text
-                        })
+                        body:
+                            JSON.stringify({
+                                prompt: text
+                            })
                     }
                 );
 
@@ -912,15 +1013,15 @@ async function sendMessage() {
             if (data.video) {
 
                 addVideo(
-                    data.video,
-                    "Generated video"
+                    data.video
                 );
 
             } else {
 
                 addMessage(
                     data.error ||
-                    "Video generation failed."
+                    "Video generation is not available yet.",
+                    "assistant"
                 );
             }
 
@@ -928,18 +1029,25 @@ async function sendMessage() {
         }
 
 
-        /* =========================
-           IMAGE → VIDEO
-        ========================= */
+        /* IMAGE TO VIDEO */
 
-        if (currentMode === "image-video") {
+        if (
+            currentMode ===
+            "image-video"
+        ) {
 
-            if (!selectedFile) {
+            const file =
+                document.getElementById(
+                    "fileInput"
+                ).files[0];
+
+            if (!file) {
 
                 removeLoading();
 
                 addMessage(
-                    "🖼️ Please upload an image first."
+                    "Please choose an image first.",
+                    "assistant"
                 );
 
                 return;
@@ -950,7 +1058,7 @@ async function sendMessage() {
 
             formData.append(
                 "image",
-                selectedFile
+                file
             );
 
             formData.append(
@@ -975,100 +1083,249 @@ async function sendMessage() {
             if (data.video) {
 
                 addVideo(
-                    data.video,
-                    "Image → Video"
+                    data.video
                 );
 
             } else {
 
                 addMessage(
                     data.error ||
-                    "Image-to-video failed."
+                    "Image-to-video is not available yet.",
+                    "assistant"
                 );
             }
 
-            return;
         }
 
     } catch (error) {
 
-        console.error(error);
-
         removeLoading();
 
+        console.error(
+            "Send error:",
+            error
+        );
+
         addMessage(
-            "Something went wrong. Please try again."
+            "Something went wrong. Please try again.",
+            "assistant"
         );
     }
-
-    selectedFile = null;
-
-    document.getElementById(
-        "fileInput"
-    ).value = "";
-
-    document.getElementById(
-        "fileName"
-    ).textContent = "";
 }
-
-
-/* =========================
-   ENTER KEY
-========================= */
-
-document
-    .getElementById("messageInput")
-    .addEventListener(
-        "keydown",
-        function(event) {
-
-            if (
-                event.key === "Enter" &&
-                !event.shiftKey
-            ) {
-
-                event.preventDefault();
-
-                sendMessage();
-            }
-        }
-    );
 
 
 /* =========================
    NEW CHAT
 ========================= */
 
-function newChat() {
+async function newChat() {
 
-    document.getElementById(
-        "messages"
-    ).innerHTML = `
-        <div class="welcome" id="welcome">
-            <h1>What can I help you create?</h1>
-            <p>
-                Chat, create images, edit photos,
-                generate videos, and more.
-            </p>
-        </div>
-    `;
+    try {
 
-    selectedFile = null;
+        const response =
+            await fetch(
+                "/api/conversations",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+                    body:
+                        JSON.stringify({
+                            title: "New Chat"
+                        })
+                }
+            );
 
-    document.getElementById(
-        "fileInput"
-    ).value = "";
+        const data =
+            await response.json();
 
-    document.getElementById(
-        "fileName"
-    ).textContent = "";
+        if (!response.ok) {
 
-    document.getElementById(
-        "messageInput"
-    ).value = "";
+            alert(
+                data.error ||
+                "Could not create a new chat."
+            );
 
-    selectMode("chat");
+            return;
+        }
+
+        currentConversationId =
+            data.conversation_id;
+
+        showWelcome();
+
+        await loadChatHistory();
+
+    } catch (error) {
+
+        console.error(
+            "New chat error:",
+            error
+        );
+    }
+}
+
+
+/* =========================
+   MODE
+========================= */
+
+function selectMode(
+    mode,
+    button
+) {
+
+    currentMode = mode;
+
+    document
+        .querySelectorAll(
+            ".mode-button"
+        )
+        .forEach(
+            item =>
+                item.classList.remove(
+                    "active"
+                )
+        );
+
+    button.classList.add(
+        "active"
+    );
+}
+
+
+/* =========================
+   FILE
+========================= */
+
+function fileSelected() {
+
+    const file =
+        document.getElementById(
+            "fileInput"
+        ).files[0];
+
+    if (file) {
+
+        console.log(
+            "Selected:",
+            file.name
+        );
+    }
+}
+
+
+/* =========================
+   IMAGE
+========================= */
+
+function addImage(
+    imageUrl
+) {
+
+    const welcome =
+        document.getElementById(
+            "welcome"
+        );
+
+    if (welcome) {
+        welcome.remove();
+    }
+
+    const messages =
+        document.getElementById(
+            "messages"
+        );
+
+    const wrapper =
+        document.createElement(
+            "div"
+        );
+
+    wrapper.className =
+        "message assistant";
+
+    const img =
+        document.createElement(
+            "img"
+        );
+
+    img.src = imageUrl;
+
+    img.style.maxWidth =
+        "500px";
+
+    img.style.borderRadius =
+        "15px";
+
+    wrapper.appendChild(img);
+
+    messages.appendChild(
+        wrapper
+    );
+
+    messages.scrollTop =
+        messages.scrollHeight;
+}
+
+
+/* =========================
+   VIDEO
+========================= */
+
+function addVideo(
+    videoUrl
+) {
+
+    const welcome =
+        document.getElementById(
+            "welcome"
+        );
+
+    if (welcome) {
+        welcome.remove();
+    }
+
+    const messages =
+        document.getElementById(
+            "messages"
+        );
+
+    const wrapper =
+        document.createElement(
+            "div"
+        );
+
+    wrapper.className =
+        "message assistant";
+
+    const video =
+        document.createElement(
+            "video"
+        );
+
+    video.src = videoUrl;
+
+    video.controls = true;
+
+    video.style.maxWidth =
+        "500px";
+
+    video.style.borderRadius =
+        "15px";
+
+    wrapper.appendChild(
+        video
+    );
+
+    messages.appendChild(
+        wrapper
+    );
+
+    messages.scrollTop =
+        messages.scrollHeight;
 }
 
 
@@ -1078,26 +1335,13 @@ function newChat() {
 
 async function startVoice() {
 
-    /*
-     * If already recording,
-     * clicking the microphone stops it.
-     */
-
     if (
-        currentRecorder &&
-        currentRecorder.state === "recording"
+        !navigator.mediaDevices ||
+        !navigator.mediaDevices.getUserMedia
     ) {
 
-        currentRecorder.stop();
-
-        return;
-    }
-
-
-    if (!navigator.mediaDevices) {
-
-        addMessage(
-            "Voice recording isn't supported here."
+        alert(
+            "Voice recording is not supported in this browser."
         );
 
         return;
@@ -1107,28 +1351,31 @@ async function startVoice() {
 
         const stream =
             await navigator.mediaDevices
-                .getUserMedia({
-                    audio: true
-                });
+            .getUserMedia({
+                audio: true
+            });
 
         const recorder =
-            new MediaRecorder(stream);
-
-        currentRecorder = recorder;
+            new MediaRecorder(
+                stream
+            );
 
         const chunks = [];
 
         recorder.ondataavailable =
-            function(event) {
+            event => {
 
-                if (event.data.size > 0) {
-                    chunks.push(event.data);
+                if (
+                    event.data.size > 0
+                ) {
+                    chunks.push(
+                        event.data
+                    );
                 }
             };
 
-
         recorder.onstop =
-            async function() {
+            async () => {
 
                 stream
                     .getTracks()
@@ -1136,8 +1383,6 @@ async function startVoice() {
                         track =>
                             track.stop()
                     );
-
-                currentRecorder = null;
 
                 const blob =
                     new Blob(
@@ -1154,26 +1399,32 @@ async function startVoice() {
                 formData.append(
                     "audio",
                     blob,
-                    "voice.webm"
+                    "recording.webm"
                 );
 
                 try {
-
-                    addMessage(
-                        "🎤 Transcribing..."
-                    );
 
                     const response =
                         await fetch(
                             "/transcribe",
                             {
-                                method: "POST",
-                                body: formData
+                                method:
+                                    "POST",
+                                body:
+                                    formData
                             }
                         );
 
                     const data =
                         await response.json();
+
+                    if (response.status === 401) {
+
+                        window.location.href =
+                            "/";
+
+                        return;
+                    }
 
                     if (data.text) {
 
@@ -1182,11 +1433,11 @@ async function startVoice() {
                                 "messageInput"
                             )
                             .value =
-                                data.text;
+                            data.text;
 
                     } else {
 
-                        addMessage(
+                        alert(
                             data.error ||
                             "Voice transcription failed."
                         );
@@ -1194,30 +1445,77 @@ async function startVoice() {
 
                 } catch (error) {
 
-                    console.error(error);
-
-                    addMessage(
+                    alert(
                         "Voice transcription failed."
                     );
                 }
             };
 
-
         recorder.start();
 
-        addMessage(
-            "🎤 Recording... Click the microphone again to stop."
+        alert(
+            "Recording... Click OK when you are finished."
         );
+
+        recorder.stop();
 
     } catch (error) {
 
-        console.error(error);
-
-        addMessage(
-            "Please allow microphone access."
+        alert(
+            "Microphone permission was not granted."
         );
     }
 }
+
+
+/* =========================
+   LOGOUT
+========================= */
+
+function logout() {
+
+    window.location.href =
+        "/logout";
+}
+
+
+/* =========================
+   ENTER KEY
+========================= */
+
+document
+    .getElementById(
+        "messageInput"
+    )
+    .addEventListener(
+        "keydown",
+        event => {
+
+            if (
+                event.key === "Enter"
+                &&
+                !event.shiftKey
+            ) {
+
+                event.preventDefault();
+
+                sendMessage();
+            }
+        }
+    );
+
+
+/* =========================
+   START
+========================= */
+
+(async function() {
+
+    await loadUser();
+
+    await loadChatHistory();
+
+})();
 
 </script>
 
