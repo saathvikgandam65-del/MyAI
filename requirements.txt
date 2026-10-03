@@ -2,3 +2,4 @@ Flask
 gunicorn
 huggingface_hub
 requests
+Pillow
