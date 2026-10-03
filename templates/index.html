@@ -21,18 +21,10 @@ body {
     overflow: hidden;
 }
 
-/* =========================
-   LAYOUT
-========================= */
-
 .app {
     display: flex;
     height: 100vh;
 }
-
-/* =========================
-   SIDEBAR
-========================= */
 
 .sidebar {
     width: 270px;
@@ -125,10 +117,6 @@ body {
     background: #1d2532;
 }
 
-/* =========================
-   MAIN
-========================= */
-
 .main {
     flex: 1;
     display: flex;
@@ -166,10 +154,6 @@ body {
     color: #8e98aa;
 }
 
-/* =========================
-   MESSAGES
-========================= */
-
 .message {
     max-width: 850px;
     margin: 0 auto 18px auto;
@@ -197,9 +181,27 @@ body {
     border: 1px solid #283142;
 }
 
-/* =========================
-   MODES
-========================= */
+.media-card {
+    background: #171e2a;
+    border: 1px solid #283142;
+    border-radius: 15px;
+    padding: 12px;
+    max-width: 560px;
+}
+
+.media-card img,
+.media-card video {
+    display: block;
+    width: 100%;
+    max-width: 520px;
+    border-radius: 12px;
+}
+
+.media-title {
+    color: #9da6b8;
+    font-size: 13px;
+    margin-bottom: 10px;
+}
 
 .modes {
     display: flex;
@@ -224,10 +226,6 @@ body {
     color: white;
     border-color: #6878ff;
 }
-
-/* =========================
-   INPUT
-========================= */
 
 .input-area {
     padding: 14px 20px 20px;
@@ -280,22 +278,24 @@ body {
     background: #5666ed;
 }
 
-/* =========================
-   FILE
-========================= */
-
 .file-area {
     max-width: 900px;
     margin: 0 auto 8px auto;
+    display: none;
+}
+
+.file-area.visible {
+    display: block;
 }
 
 .file-area input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #30394a;
+    border-radius: 10px;
+    background: #121925;
     color: #9da6b8;
 }
-
-/* =========================
-   LOADING
-========================= */
 
 .loading {
     max-width: 850px;
@@ -303,9 +303,15 @@ body {
     color: #8993a5;
 }
 
-/* =========================
-   MOBILE
-========================= */
+.error-box {
+    color: #ff9c9c;
+    background: #351b20;
+    border: 1px solid #66333b;
+    padding: 12px;
+    border-radius: 12px;
+    max-width: 560px;
+    white-space: pre-wrap;
+}
 
 @media (max-width: 700px) {
 
@@ -328,10 +334,6 @@ body {
 <body>
 
 <div class="app">
-
-    <!-- =========================
-         SIDEBAR
-    ========================= -->
 
     <aside class="sidebar">
 
@@ -375,15 +377,10 @@ body {
 
     </aside>
 
-
-    <!-- =========================
-         MAIN
-    ========================= -->
-
     <main class="main">
 
         <div class="topbar">
-            My AI
+            🤖 My AI
         </div>
 
         <section
@@ -407,9 +404,6 @@ body {
             </div>
 
         </section>
-
-
-        <!-- MODES -->
 
         <div class="modes">
 
@@ -450,21 +444,19 @@ body {
 
         </div>
 
-
-        <!-- FILE -->
-
-        <div class="file-area">
+        <div
+            id="fileArea"
+            class="file-area"
+        >
 
             <input
                 id="fileInput"
                 type="file"
+                accept="image/*"
                 onchange="fileSelected()"
             >
 
         </div>
-
-
-        <!-- INPUT -->
 
         <div class="input-area">
 
@@ -509,22 +501,18 @@ let currentConversationId = null;
 
 
 /* =========================
-   LOAD USER
+   USER
 ========================= */
 
 async function loadUser() {
 
     try {
 
-        const response = await fetch(
-            "/api/me"
-        );
+        const response = await fetch("/api/me");
 
-        const data =
-            await response.json();
+        const data = await response.json();
 
         if (!data.logged_in) {
-
             window.location.href = "/";
             return;
         }
@@ -544,16 +532,15 @@ async function loadUser() {
 
 
 /* =========================
-   LOAD CHAT LIST
+   CHAT HISTORY
 ========================= */
 
 async function loadChatHistory() {
 
     try {
 
-        const response = await fetch(
-            "/api/conversations"
-        );
+        const response =
+            await fetch("/api/conversations");
 
         if (!response.ok) {
             return;
@@ -584,6 +571,7 @@ async function loadChatHistory() {
                     conversation.id ===
                     currentConversationId
                 ) {
+
                     item.classList.add(
                         "active"
                     );
@@ -602,6 +590,7 @@ async function loadChatHistory() {
                 };
 
                 container.appendChild(item);
+
             }
         );
 
@@ -616,7 +605,7 @@ async function loadChatHistory() {
 
 
 /* =========================
-   LOAD CONVERSATION
+   CONVERSATION
 ========================= */
 
 async function loadConversation(
@@ -625,9 +614,10 @@ async function loadConversation(
 
     try {
 
-        const response = await fetch(
-            `/api/conversations/${conversationId}`
-        );
+        const response =
+            await fetch(
+                `/api/conversations/${conversationId}`
+            );
 
         const data =
             await response.json();
@@ -666,6 +656,7 @@ async function loadConversation(
         if (
             data.messages.length === 0
         ) {
+
             showWelcome();
         }
 
@@ -702,7 +693,7 @@ function showWelcome() {
 
 
 /* =========================
-   ADD MESSAGE
+   TEXT MESSAGE
 ========================= */
 
 function addMessage(
@@ -740,11 +731,70 @@ function addMessage(
     content.className =
         "message-content";
 
-    content.textContent = text;
+    content.textContent =
+        text;
 
-    wrapper.appendChild(content);
+    wrapper.appendChild(
+        content
+    );
 
-    messages.appendChild(wrapper);
+    messages.appendChild(
+        wrapper
+    );
+
+    messages.scrollTop =
+        messages.scrollHeight;
+}
+
+
+/* =========================
+   ERROR
+========================= */
+
+function addError(
+    text
+) {
+
+    const welcome =
+        document.getElementById(
+            "welcome"
+        );
+
+    if (welcome) {
+        welcome.remove();
+    }
+
+    const messages =
+        document.getElementById(
+            "messages"
+        );
+
+    const wrapper =
+        document.createElement(
+            "div"
+        );
+
+    wrapper.className =
+        "message assistant";
+
+    const error =
+        document.createElement(
+            "div"
+        );
+
+    error.className =
+        "error-box";
+
+    error.textContent =
+        text;
+
+    wrapper.appendChild(
+        error
+    );
+
+    messages.appendChild(
+        wrapper
+    );
 
     messages.scrollTop =
         messages.scrollHeight;
@@ -755,7 +805,9 @@ function addMessage(
    LOADING
 ========================= */
 
-function showLoading() {
+function showLoading(
+    text = "My AI is working..."
+) {
 
     const messages =
         document.getElementById(
@@ -774,9 +826,11 @@ function showLoading() {
         "loading";
 
     loading.textContent =
-        "My AI is thinking...";
+        text;
 
-    messages.appendChild(loading);
+    messages.appendChild(
+        loading
+    );
 
     messages.scrollTop =
         messages.scrollHeight;
@@ -797,7 +851,30 @@ function removeLoading() {
 
 
 /* =========================
-   SEND MESSAGE
+   RESPONSE ERROR
+========================= */
+
+async function getResponseData(
+    response
+) {
+
+    try {
+
+        return await response.json();
+
+    } catch {
+
+        return {
+            error:
+                `Server returned HTTP ${response.status}.`
+        };
+
+    }
+}
+
+
+/* =========================
+   SEND
 ========================= */
 
 async function sendMessage() {
@@ -821,9 +898,17 @@ async function sendMessage() {
         "user"
     );
 
-    showLoading();
+    showLoading(
+        currentMode === "chat"
+            ? "My AI is thinking..."
+            : "My AI is creating..."
+    );
 
     try {
+
+        /* =====================
+           CHAT
+        ===================== */
 
         if (currentMode === "chat") {
 
@@ -844,13 +929,26 @@ async function sendMessage() {
                 );
 
             const data =
-                await response.json();
+                await getResponseData(
+                    response
+                );
 
             removeLoading();
 
             if (response.status === 401) {
 
                 window.location.href = "/";
+                return;
+            }
+
+            if (!response.ok) {
+
+                addError(
+                    data.error ||
+                    data.reply ||
+                    "Chat request failed."
+                );
+
                 return;
             }
 
@@ -868,7 +966,9 @@ async function sendMessage() {
         }
 
 
-        /* IMAGE */
+        /* =====================
+           IMAGE
+        ===================== */
 
         if (currentMode === "image") {
 
@@ -889,36 +989,42 @@ async function sendMessage() {
                 );
 
             const data =
-                await response.json();
+                await getResponseData(
+                    response
+                );
 
             removeLoading();
 
-            if (data.error) {
+            if (!response.ok) {
 
-                addMessage(
-                    data.error,
-                    "assistant"
+                addError(
+                    data.error ||
+                    "Image generation failed."
                 );
 
-            } else if (data.image) {
-
-                addImage(
-                    data.image
-                );
-
-            } else {
-
-                addMessage(
-                    "Image generation is not available yet.",
-                    "assistant"
-                );
+                return;
             }
+
+            if (!data.image) {
+
+                addError(
+                    "The server did not return an image."
+                );
+
+                return;
+            }
+
+            addImage(
+                data.image
+            );
 
             return;
         }
 
 
-        /* EDIT */
+        /* =====================
+           EDIT PHOTO
+        ===================== */
 
         if (currentMode === "edit") {
 
@@ -931,9 +1037,8 @@ async function sendMessage() {
 
                 removeLoading();
 
-                addMessage(
-                    "Please choose a photo first.",
-                    "assistant"
+                addError(
+                    "Please choose a photo first."
                 );
 
                 return;
@@ -962,30 +1067,43 @@ async function sendMessage() {
                 );
 
             const data =
-                await response.json();
+                await getResponseData(
+                    response
+                );
 
             removeLoading();
 
-            if (data.image) {
+            if (!response.ok) {
 
-                addImage(
-                    data.image
-                );
-
-            } else {
-
-                addMessage(
+                addError(
                     data.error ||
-                    "Photo editing is not available yet.",
-                    "assistant"
+                    "Photo editing failed."
                 );
+
+                return;
             }
+
+            if (!data.image) {
+
+                addError(
+                    "The server did not return an edited image."
+                );
+
+                return;
+            }
+
+            addImage(
+                data.image,
+                "Edited Photo"
+            );
 
             return;
         }
 
 
-        /* VIDEO */
+        /* =====================
+           VIDEO
+        ===================== */
 
         if (currentMode === "video") {
 
@@ -1006,30 +1124,42 @@ async function sendMessage() {
                 );
 
             const data =
-                await response.json();
+                await getResponseData(
+                    response
+                );
 
             removeLoading();
 
-            if (data.video) {
+            if (!response.ok) {
 
-                addVideo(
-                    data.video
-                );
-
-            } else {
-
-                addMessage(
+                addError(
                     data.error ||
-                    "Video generation is not available yet.",
-                    "assistant"
+                    "Video generation failed."
                 );
+
+                return;
             }
+
+            if (!data.video) {
+
+                addError(
+                    "The server did not return a video."
+                );
+
+                return;
+            }
+
+            addVideo(
+                data.video
+            );
 
             return;
         }
 
 
-        /* IMAGE TO VIDEO */
+        /* =====================
+           IMAGE → VIDEO
+        ===================== */
 
         if (
             currentMode ===
@@ -1045,9 +1175,8 @@ async function sendMessage() {
 
                 removeLoading();
 
-                addMessage(
-                    "Please choose an image first.",
-                    "assistant"
+                addError(
+                    "Please choose an image first."
                 );
 
                 return;
@@ -1076,25 +1205,36 @@ async function sendMessage() {
                 );
 
             const data =
-                await response.json();
+                await getResponseData(
+                    response
+                );
 
             removeLoading();
 
-            if (data.video) {
+            if (!response.ok) {
 
-                addVideo(
-                    data.video
-                );
-
-            } else {
-
-                addMessage(
+                addError(
                     data.error ||
-                    "Image-to-video is not available yet.",
-                    "assistant"
+                    "Image-to-video failed."
                 );
+
+                return;
             }
 
+            if (!data.video) {
+
+                addError(
+                    "The server did not return a video."
+                );
+
+                return;
+            }
+
+            addVideo(
+                data.video
+            );
+
+            return;
         }
 
     } catch (error) {
@@ -1106,9 +1246,9 @@ async function sendMessage() {
             error
         );
 
-        addMessage(
-            "Something went wrong. Please try again.",
-            "assistant"
+        addError(
+            "Connection error: " +
+            error.message
         );
     }
 }
@@ -1193,6 +1333,62 @@ function selectMode(
     button.classList.add(
         "active"
     );
+
+    const fileArea =
+        document.getElementById(
+            "fileArea"
+        );
+
+    const input =
+        document.getElementById(
+            "messageInput"
+        );
+
+    const fileInput =
+        document.getElementById(
+            "fileInput"
+        );
+
+    if (
+        mode === "edit" ||
+        mode === "image-video"
+    ) {
+
+        fileArea.classList.add(
+            "visible"
+        );
+
+        fileInput.value = "";
+
+        input.placeholder =
+            mode === "edit"
+                ? "Describe how to edit the photo..."
+                : "Describe how the image should move...";
+
+    } else {
+
+        fileArea.classList.remove(
+            "visible"
+        );
+
+        fileInput.value = "";
+
+        if (mode === "image") {
+
+            input.placeholder =
+                "Describe the image you want...";
+
+        } else if (mode === "video") {
+
+            input.placeholder =
+                "Describe the video you want...";
+
+        } else {
+
+            input.placeholder =
+                "Message My AI...";
+        }
+    }
 }
 
 
@@ -1210,7 +1406,7 @@ function fileSelected() {
     if (file) {
 
         console.log(
-            "Selected:",
+            "Selected image:",
             file.name
         );
     }
@@ -1222,7 +1418,8 @@ function fileSelected() {
 ========================= */
 
 function addImage(
-    imageUrl
+    imageUrl,
+    title = "Generated Image"
 ) {
 
     const welcome =
@@ -1247,20 +1444,47 @@ function addImage(
     wrapper.className =
         "message assistant";
 
+    const card =
+        document.createElement(
+            "div"
+        );
+
+    card.className =
+        "media-card";
+
+    const label =
+        document.createElement(
+            "div"
+        );
+
+    label.className =
+        "media-title";
+
+    label.textContent =
+        title;
+
     const img =
         document.createElement(
             "img"
         );
 
-    img.src = imageUrl;
+    img.src =
+        imageUrl;
 
-    img.style.maxWidth =
-        "500px";
+    img.alt =
+        title;
 
-    img.style.borderRadius =
-        "15px";
+    card.appendChild(
+        label
+    );
 
-    wrapper.appendChild(img);
+    card.appendChild(
+        img
+    );
+
+    wrapper.appendChild(
+        card
+    );
 
     messages.appendChild(
         wrapper
@@ -1301,23 +1525,52 @@ function addVideo(
     wrapper.className =
         "message assistant";
 
+    const card =
+        document.createElement(
+            "div"
+        );
+
+    card.className =
+        "media-card";
+
+    const label =
+        document.createElement(
+            "div"
+        );
+
+    label.className =
+        "media-title";
+
+    label.textContent =
+        "Generated Video";
+
     const video =
         document.createElement(
             "video"
         );
 
-    video.src = videoUrl;
+    video.src =
+        videoUrl;
 
-    video.controls = true;
+    video.controls =
+        true;
 
-    video.style.maxWidth =
-        "500px";
+    video.autoplay =
+        false;
 
-    video.style.borderRadius =
-        "15px";
+    video.playsInline =
+        true;
+
+    card.appendChild(
+        label
+    );
+
+    card.appendChild(
+        video
+    );
 
     wrapper.appendChild(
-        video
+        card
     );
 
     messages.appendChild(
@@ -1368,6 +1621,7 @@ async function startVoice() {
                 if (
                     event.data.size > 0
                 ) {
+
                     chunks.push(
                         event.data
                     );
@@ -1418,7 +1672,10 @@ async function startVoice() {
                     const data =
                         await response.json();
 
-                    if (response.status === 401) {
+                    if (
+                        response.status ===
+                        401
+                    ) {
 
                         window.location.href =
                             "/";
@@ -1454,7 +1711,7 @@ async function startVoice() {
         recorder.start();
 
         alert(
-            "Recording... Click OK when you are finished."
+            "Recording... Click OK when finished."
         );
 
         recorder.stop();
@@ -1480,7 +1737,7 @@ function logout() {
 
 
 /* =========================
-   ENTER KEY
+   ENTER
 ========================= */
 
 document
@@ -1492,8 +1749,7 @@ document
         event => {
 
             if (
-                event.key === "Enter"
-                &&
+                event.key === "Enter" &&
                 !event.shiftKey
             ) {
 
