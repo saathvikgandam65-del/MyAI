@@ -20,7 +20,7 @@ client = InferenceClient(
     provider="auto"
 )
 
-MODEL = "Qwen/Qwen2.5-3B-Instruct"
+MODEL = "Qwen/Qwen3-4B-Instruct-2507"
 VOICE_MODEL = "openai/whisper-large-v3"
 
 # Image models
