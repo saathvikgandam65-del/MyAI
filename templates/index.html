@@ -313,19 +313,20 @@ body {
     white-space: pre-wrap;
 }
 
-@media (max-width: 700px) {
-
-    .sidebar {
-        width: 220px;
-    }
-
-    .welcome h1 {
-        font-size: 30px;
-    }
-
-    .message-content {
-        max-width: 90%;
-    }
+.mobile-menu-button { display:none; width:42px; height:42px; border:0; border-radius:10px; background:#202a3a; color:white; font-size:22px; cursor:pointer; }
+.sidebar-overlay { display:none; }
+@media (max-width:700px) {
+    .app,.main { width:100%; max-width:100vw; min-width:0; overflow:hidden; }
+    .mobile-menu-button { display:block; flex-shrink:0; }
+    .sidebar { position:fixed; top:0; left:0; bottom:0; z-index:1000; width:min(82vw,300px); transform:translateX(-105%); transition:transform .22s ease; box-shadow:10px 0 30px rgba(0,0,0,.35); }
+    .sidebar.open { transform:translateX(0); }
+    .sidebar-overlay { position:fixed; inset:0; z-index:999; background:rgba(0,0,0,.45); }
+    .sidebar-overlay.visible { display:block; }
+    .messages { width:100%; padding-left:12px; padding-right:12px; }
+    .message-content { max-width:92%; }
+    .welcome h1 { font-size:30px; }
+    .input-area { padding:10px 10px 12px; }
+    .input-box { width:100%; max-width:none; }
 }
 
 </style>
@@ -334,6 +335,8 @@ body {
 <body>
 
 <div class="app">
+
+    <div id="sidebarOverlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
 
     <aside class="sidebar">
 
@@ -380,6 +383,7 @@ body {
     <main class="main">
 
         <div class="topbar">
+            <button class="mobile-menu-button" onclick="toggleSidebar()" aria-label="Open chat menu">☰</button>
             🤖 My AI
         </div>
 
@@ -509,6 +513,11 @@ async function loadUser() {
     try {
 
         const response = await fetch("/api/me");
+
+        if (response.status === 401) {
+            window.location.href = "/";
+            return;
+        }
 
         const data = await response.json();
 
@@ -661,6 +670,7 @@ async function loadConversation(
         }
 
         await loadChatHistory();
+        closeSidebar();
 
     } catch (error) {
 
@@ -923,7 +933,8 @@ async function sendMessage() {
                         },
                         body:
                             JSON.stringify({
-                                message: text
+                                message: text,
+                                conversation_id: currentConversationId
                             })
                     }
                 );
@@ -950,6 +961,10 @@ async function sendMessage() {
                 );
 
                 return;
+            }
+
+            if (data.conversation_id) {
+                currentConversationId = data.conversation_id;
             }
 
             addMessage(
@@ -1255,6 +1270,22 @@ async function sendMessage() {
 
 
 /* =========================
+   MOBILE SIDEBAR
+========================= */
+function toggleSidebar() {
+    const sidebar=document.querySelector(".sidebar");
+    const overlay=document.getElementById("sidebarOverlay");
+    sidebar.classList.toggle("open");
+    overlay.classList.toggle("visible",sidebar.classList.contains("open"));
+}
+function closeSidebar() {
+    const sidebar=document.querySelector(".sidebar");
+    const overlay=document.getElementById("sidebarOverlay");
+    if (sidebar) sidebar.classList.remove("open");
+    if (overlay) overlay.classList.remove("visible");
+}
+
+/* =========================
    NEW CHAT
 ========================= */
 
@@ -1297,6 +1328,7 @@ async function newChat() {
         showWelcome();
 
         await loadChatHistory();
+        closeSidebar();
 
     } catch (error) {
 
